@@ -1,0 +1,36 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format  
+    "version": "2.0.0",
+    "tasks": [
+    {
+        "label": "Build",
+        "type": "shell",
+        "command": "g++",
+        "args": [
+            "-g",
+            "-D_WINDOWS",  // Required for proper macro definition
+            "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo.cpp",
+            "-o",
+            "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo.exe",
+            "-I",
+            "${workspaceFolder}/uirSDKfiles",
+            "-L",
+            "${workspaceFolder}/UirSdkLib",
+            "-l",
+            "libUirSdkWin64",
+            "-mconsole" // Specify console application
+        ],
+        "options": {
+            "cwd": "${workspaceFolder}",
+        },
+        "problemMatcher": [
+            "$gcc"
+        ],
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        }
+    }
+    ]
+}
