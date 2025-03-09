@@ -4,7 +4,7 @@
     "version": "2.0.0",
     "tasks": [
     {
-        "label": "Build",
+        "label": "Build UirSDK3Demo",
         "type": "shell",
         "command": "g++",
         "args": [
@@ -13,6 +13,35 @@
             "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo.cpp",
             "-o",
             "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo.exe",
+            "-I",
+            "${workspaceFolder}/uirSDKfiles",
+            "-L",
+            "${workspaceFolder}/UirSdkLib",
+            "-l",
+            "libUirSdkWin64",
+            "-mconsole" // Specify console application
+        ],
+        "options": {
+            "cwd": "${workspaceFolder}",
+        },
+        "problemMatcher": [
+            "$gcc"
+        ],
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        }
+    },
+    {
+        "label": "Build setup",
+        "type": "shell",
+        "command": "g++",
+        "args": [
+            "-g",
+            "-D_WINDOWS",  // Required for proper macro definition
+            "${workspaceFolder}/cloudgate/setup.cpp",
+            "-o",
+            "${workspaceFolder}/cloudgate/setup.exe",
             "-I",
             "${workspaceFolder}/uirSDKfiles",
             "-L",

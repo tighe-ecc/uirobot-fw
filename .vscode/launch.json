@@ -5,13 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-          "name": "(gdb) Launch",
+          "name": "Launch UirSDK3Demo",
           "type": "cppdbg",
           "request": "launch",
           "program": "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo.exe",
           "args": [],
           "stopAtEntry": false,
-          "cwd": "${workspaceFolder}",
+          "cwd": "${workspaceFolder}/UirSDK3Demo",
           "environment": [],
           "externalConsole": false,
           "MIMode": "gdb",
@@ -23,7 +23,28 @@
               "ignoreFailures": true
             }
           ],
-          "preLaunchTask": "Build"
+          "preLaunchTask": "Build UirSDK3Demo"
+        },
+        {
+          "name": "Launch setup",
+          "type": "cppdbg",
+          "request": "launch",
+          "program": "${workspaceFolder}/cloudgate/setup.exe",
+          "args": [],
+          "stopAtEntry": false,
+          "cwd": "${workspaceFolder}/cloudgate",
+          "environment": [],
+          "externalConsole": false,
+          "MIMode": "gdb",
+          "miDebuggerPath": "C:/msys64/mingw64/bin/gdb.exe",
+          "setupCommands": [
+            {
+              "description": "Enable pretty-printing for gdb",
+              "text": "-enable-pretty-printing",
+              "ignoreFailures": true
+            }
+          ],
+          "preLaunchTask": "Build setup"
         }
       ]
 }
