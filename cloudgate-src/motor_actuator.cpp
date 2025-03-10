@@ -100,14 +100,14 @@ void configureMotor() {
         }
 
         // Set acceleration/deceleration rate to that of gravity
-        err = SdkSetAcceleration(g_GtwyHandle, CANid, 130667, &unRxData);
+        err = SdkSetAcceleration(g_GtwyHandle, CANid, 130667*10, &unRxData);
         if (err) {
             std::cout << "CANid:" << CANid << "    SdkGetAcceleration Fail!\n";
             return;
         } else {
             std::cout << "CANid:" << CANid << "    Acceleration rate = " << unRxData << "\n";
         }
-        err = SdkSetDeceleration(g_GtwyHandle, CANid, 130667, &unRxData);
+        err = SdkSetDeceleration(g_GtwyHandle, CANid, 130667*10, &unRxData);
         if (err) {
             std::cout << "CANid:" << CANid << "    SdkGetAcceleration Fail!\n";
             return;
@@ -181,6 +181,7 @@ void moveActuatorToPosition(int CANid, int position) {
     static unint unRxData = 0;
     static int RxPr;    // Position feedback
     static int RxVelo;    // Velocity feedback
+    static int lastVelocity = 0;
 
     static MOTION_STATUS_OBJ MotionStatus;
     static int Velo;
@@ -212,16 +213,50 @@ void moveActuatorToPosition(int CANid, int position) {
     auto currentTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count();
     lastTime = currentTime;
+    
+    // PID controller parameters
+    float Kp = 3.0f;  // Proportional gain
+    float Ki = 56.8f;   // Integral gain
+    float Kd = 0.508f; // Derivative gain
 
-    // Calculate the velocity based on the change in position
-    int deltaPosition = position - Pabs;
-    int setpointVelocity = static_cast<int>(static_cast<float>(deltaPosition) / static_cast<float>(elapsedTime) * 1000.0f); // Assuming elapsedTime interval in ms
-    if (setpointVelocity > 160000) {
-        std::cout << "Setpoint velocity is too high, limiting to 160000\n";
-        setpointVelocity = 160000;
+    // Calculate the error between the desired and actual position
+    float positionError = position - Pabs;
+
+    // Calculate the integral of the position error
+    static float integralError = 0;
+    integralError += positionError * elapsedTime / 1000.0;
+    if (Ki * integralError > 160000) {
+        std::cout << "Integral error is too high, limiting to 160000\n";
+        integralError = 160000 / Ki;
     }
-    std::cout << "Delta Position: " << deltaPosition << "    Setpoint Velocity: " << setpointVelocity << "    Elapsed Time: " << elapsedTime << " ms" << std::endl;
 
+    // Calculate the derivative of the position error
+    static float lastPositionError = 0;
+    float derivativeError = (positionError - lastPositionError) / elapsedTime * 1000.0;
+    lastPositionError = positionError;
+
+    // Calculate the control output
+    int setpointVelocity = static_cast<int>(Kp * positionError + Ki * integralError + Kd * derivativeError);
+    if (std::abs(setpointVelocity) > 160000) {
+        std::cout << "Setpoint velocity is too high, limiting to 160000\n";
+        setpointVelocity = (setpointVelocity > 0) ? 160000 : -160000;
+    }
+
+    // Apply acceleration limit
+    static const int maxAcceleration = 131; // Maximum change in velocity per millisecond
+    int velocityChange = setpointVelocity - lastVelocity;
+    if (std::abs(velocityChange) > maxAcceleration * elapsedTime) {
+        std::cout << "Acceleration limit exceeded, limiting velocity change\n";
+        setpointVelocity = lastVelocity + ((velocityChange > 0) ? maxAcceleration * elapsedTime : -maxAcceleration * elapsedTime);
+    }
+    lastVelocity = setpointVelocity;
+
+    std::cout << "Kp*PosErr: " << Kp * positionError 
+              << "    Ki*IntErr: " << Ki * integralError
+              << "    Kd*DerErr: " << Kd * derivativeError 
+              << "    SetVel: " << setpointVelocity << std::endl;
+
+    // Update the target motor velocity
     err = SdkSetJogMxn(g_GtwyHandle, CANid, setpointVelocity, &RxVelo);
     if (err != 0) {
         std::cout << "CANid:" << CANid << "    SdkSetJogMxn Fail!\n";
@@ -229,6 +264,7 @@ void moveActuatorToPosition(int CANid, int position) {
         return;
     }
 
+    // Start tracking to target motor velocity
     err = SdkSetBeginMxn(g_GtwyHandle, CANid);
     if (err != 0) {
         std::cout << "CANid:" << CANid << "    SdkSetBeginMxn Fail!\n";
