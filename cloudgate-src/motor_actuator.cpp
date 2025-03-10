@@ -173,7 +173,7 @@ void configureMotor() {
 
 // Function to set the motor to a specific position
 void moveActuatorToPosition(int CANid, int position) {
-    std::cout << "Moving actuator to position: " << position << std::endl;
+    // std::cout << "Moving actuator to position: " << position << std::endl;
 
     // One-time initialization
     static bool firstRun = true;
@@ -187,7 +187,8 @@ void moveActuatorToPosition(int CANid, int position) {
     static int Prel;
     static int Pabs;
 
-    static auto lastTime = std::chrono::steady_clock::now();
+    static auto startTime = std::chrono::steady_clock::now();
+    static auto lastTime = startTime;
 
     if (firstRun) {
         firstRun = false;
@@ -195,10 +196,8 @@ void moveActuatorToPosition(int CANid, int position) {
         err = 0;
         unRxData = 0;
 
-        logFile.open("position_log.csv");
+        logFile.open("../utils/position_log.csv");
         logFile << "ClockTime,ActualPosition,SetpointVelocity\n";
-
-        lastTime = std::chrono::steady_clock::now();
     }
 
     // Get the current actuator state
@@ -216,7 +215,12 @@ void moveActuatorToPosition(int CANid, int position) {
 
     // Calculate the velocity based on the change in position
     int deltaPosition = position - Pabs;
-    int setpointVelocity = deltaPosition / elapsedTime * 1000; // Assuming elapsedTime interval in ms
+    int setpointVelocity = static_cast<int>(static_cast<float>(deltaPosition) / static_cast<float>(elapsedTime) * 1000.0f); // Assuming elapsedTime interval in ms
+    if (setpointVelocity > 160000) {
+        std::cout << "Setpoint velocity is too high, limiting to 160000\n";
+        setpointVelocity = 160000;
+    }
+    std::cout << "Delta Position: " << deltaPosition << "    Setpoint Velocity: " << setpointVelocity << "    Elapsed Time: " << elapsedTime << " ms" << std::endl;
 
     err = SdkSetJogMxn(g_GtwyHandle, CANid, setpointVelocity, &RxVelo);
     if (err != 0) {
@@ -233,7 +237,7 @@ void moveActuatorToPosition(int CANid, int position) {
     }
 
     // Log the setpoint and actual positions
-    logFile << elapsedTime << "," << Pabs << "," << setpointVelocity << "\n";
+    logFile << std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count()/1000.0 << "," << Pabs << "," << setpointVelocity << "\n";
 
     // // Sleep for a short duration to prevent busy-waiting
     // std::this_thread::sleep_for(std::chrono::milliseconds(100));

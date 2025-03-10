@@ -75,6 +75,7 @@ void monitorLogFile(const std::string& logfile_path) {
     }
 
     logfile.close();
+    closeActuatorStream(5);
 }
 
 void processSetpoints() {
@@ -101,8 +102,10 @@ void processSetpoints() {
 int main() {
     std::string logfile_path = "c:\\Users\\tighe\\uirobot-fw\\cloudgate\\setpoints.csv";
 
+    // Configure the motor
     configureMotor();
 
+    // Start the monitoring and processing threads
     std::thread monitor_thread(monitorLogFile, logfile_path);
     std::thread process_thread(processSetpoints);
 

@@ -2,10 +2,10 @@ import time
 import numpy as np
 
 # Input for the period of the ramp up and down (in seconds)
-period = 1
+period = 2
 
 # Frequency (Hz)
-frequency = 10
+frequency = 40
 
 # Number of points for each ramp
 num_points = int(period * frequency / 2)

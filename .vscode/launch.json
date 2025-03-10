@@ -87,7 +87,8 @@
               "ignoreFailures": true
             }
           ],
-          "preLaunchTask": "Build streaming demo"
+          "preLaunchTask": "Build streaming demo",
+          "postDebugTask": "Run plot_positions.py"
         }
       ]
 }
