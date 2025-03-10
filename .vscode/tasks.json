@@ -12,7 +12,7 @@
             "-D_WINDOWS",  // Required for proper macro definition
             "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo.cpp",
             "-o",
-            "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo.exe",
+            "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo",
             "-I",
             "${workspaceFolder}/uirSDKfiles",
             "-L",
@@ -39,9 +39,9 @@
         "args": [
             "-g",
             "-D_WINDOWS",  // Required for proper macro definition
-            "${workspaceFolder}/cloudgate/setup.cpp",
+            "${workspaceFolder}/cloudgate-src/setup.cpp",
             "-o",
-            "${workspaceFolder}/cloudgate/setup.exe",
+            "${workspaceFolder}/cloudgate/setup",
             "-I",
             "${workspaceFolder}/uirSDKfiles",
             "-L",
@@ -60,6 +60,83 @@
             "kind": "build",
             "isDefault": true
         }
-    }
+    },
+    {
+        "label": "Build sandbox",
+        "type": "shell",
+        "command": "g++",
+        "args": [
+            "-g",
+            "-D_WINDOWS",  // Required for proper macro definition
+            "${workspaceFolder}/cloudgate-src/sandbox.cpp",
+            "-o",
+            "${workspaceFolder}/cloudgate/sandbox",
+            "-I",
+            "${workspaceFolder}/uirSDKfiles",
+            "-L",
+            "${workspaceFolder}/UirSdkLib",
+            "-l",
+            "libUirSdkWin64",
+            "-mconsole" // Specify console application
+        ],
+        "options": {
+            "cwd": "${workspaceFolder}",
+        },
+        "problemMatcher": [
+            "$gcc"
+        ],
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        }
+    },
+    {
+        "label": "Run plot_positions.py",
+        "type": "shell",
+        "command": "cmd.exe",
+        "args": [
+            "/c",
+            "${workspaceFolder}\\.venv\\Scripts\\activate && python ${workspaceFolder}\\utils\\plot_positions.py"
+        ],
+        "options": {
+            "cwd": "${workspaceFolder}"
+        },
+        "problemMatcher": [
+            "$python"
+        ],
+        "group": {
+            "kind": "test",
+            "isDefault": true
+        }
+    },
+    {
+        "label": "Build streaming demo",
+        "type": "shell",
+        "command": "g++",
+        "args": [
+            "-g",
+            "-D_WINDOWS",  // Required for proper macro definition
+            "${workspaceFolder}/cloudgate-src/streaming_demo.cpp",
+            "-o",
+            "${workspaceFolder}/cloudgate/streaming_demo",
+            "-I",
+            "${workspaceFolder}/uirSDKfiles",
+            "-L",
+            "${workspaceFolder}/UirSdkLib",
+            "-l",
+            "libUirSdkWin64",
+            "-mconsole" // Specify console application
+        ],
+        "options": {
+            "cwd": "${workspaceFolder}",
+        },
+        "problemMatcher": [
+            "$gcc"
+        ],
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        }
+    },
     ]
 }
