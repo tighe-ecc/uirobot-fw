@@ -117,6 +117,7 @@
             "-g",
             "-D_WINDOWS",  // Required for proper macro definition
             "${workspaceFolder}/cloudgate-src/streaming_demo.cpp",
+            "${workspaceFolder}/cloudgate-src/motor_actuator.cpp",
             "-o",
             "${workspaceFolder}/cloudgate/streaming_demo",
             "-I",

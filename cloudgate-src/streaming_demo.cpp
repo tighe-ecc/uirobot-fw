@@ -1,3 +1,5 @@
+#include "motor_actuator.h"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -7,16 +9,15 @@
 #include <mutex>
 #include <condition_variable>
 #include <sstream>
-// #include "motor_actuator.h"
 
 std::queue<int> setpoint_queue;
 std::mutex queue_mutex;
 std::condition_variable queue_cv;
 
-void moveActuatorToPosition(int position) {
-    // Placeholder function to move the actuator
-    std::cout << "Moving actuator to position: " << position << std::endl;
-}
+// void moveActuatorToPosition(int position) {
+//     // Placeholder function to move the actuator
+//     std::cout << "Moving actuator to position: " << position << std::endl;
+// }
 
 void monitorLogFile(const std::string& logfile_path) {
     std::ifstream logfile(logfile_path);
@@ -91,16 +92,16 @@ void processSetpoints() {
         lock.unlock(); // Unlock the mutex
 
         // Move the actuator to the new position
-        moveActuatorToPosition(position);
+        moveActuatorToPosition(5, position);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(50)); // Check every 25ms (40Hz)
+        // std::this_thread::sleep_for(std::chrono::milliseconds(50)); // Check every 25ms (40Hz)
     }
 }
 
 int main() {
     std::string logfile_path = "c:\\Users\\tighe\\uirobot-fw\\cloudgate\\setpoints.csv";
 
-    // configureMotor();
+    configureMotor();
 
     std::thread monitor_thread(monitorLogFile, logfile_path);
     std::thread process_thread(processSetpoints);
