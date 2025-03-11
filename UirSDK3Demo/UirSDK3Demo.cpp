@@ -24,7 +24,7 @@ bool g_bS1Flag_Y = false;
 
 // Define X,Y CAN-ID (Device's ID)
 int CANid_X = 5;
-int CANid_Y = 5;
+int CANid_Y = 6;
 
 // Define normal motion speed
 //RPM to pulse
@@ -497,7 +497,7 @@ int main()
 	int RxPr;
 	int RxVelo;
 
-	bool bGetPara = true;
+	bool bGetPara = false;
 
 	if (bGetPara)
 	{
@@ -544,7 +544,7 @@ int main()
 
 
 	// Whether to perform JOG speed mode test
-	bool bTest_Jog_Move = true;
+	bool bTest_Jog_Move = false;
 
 
 	if (bTest_Jog_Move)
@@ -574,7 +574,7 @@ int main()
 
 
 	// Whether to perform the PTP mode test
-	bool bTest_PTPMove = true;
+	bool bTest_PTPMove = false;
 
 	if (bTest_PTPMove)
 	{
@@ -677,7 +677,7 @@ int main()
 		}
 	}
 
-	bool BTestXYMove = false;
+	bool BTestXYMove = true;
 	if (BTestXYMove)
 	{
 

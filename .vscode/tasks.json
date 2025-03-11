@@ -67,6 +67,7 @@
         "command": "g++",
         "args": [
             "-g",
+            "-pg",  // Enable profiling
             "-D_WINDOWS",  // Required for proper macro definition
             "${workspaceFolder}/cloudgate-src/sandbox.cpp",
             "-o",

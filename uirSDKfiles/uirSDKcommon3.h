@@ -127,54 +127,54 @@ typedef union  _GATEWAY_INFO_OBJ
 {
 	struct
 	{
-		uint GtwyHandle; 	 // 网关句柄 ( 包含 类型 / 网段 / 网关 CANid )
+		uint GtwyHandle; 	 // Gateway handle (includes type / segment / gateway CANid)
 
-		uint COMidx;	     // 串口号
-		uint COMbaud;	     // 串口波特率
+		uint COMidx;	     // Serial port number
+		uint COMbaud;	     // Serial port baud rate
 
-		uint BTRidx;	     // 网关 CAN 比特率
+		uint BTRidx;	     // Gateway CAN bitrate
 
-		uint SerialNo;	     // 网关 S/N 号
-		uint FirmVer;	     // 网关固件版本
-		char  ModelStr[64];  // 网关型号信息
+		uint SerialNo;	     // Gateway S/N number
+		uint FirmVer;	     // Gateway firmware version
+		char  ModelStr[64];  // Gateway model information
 
-		uint MemberQty;	 // 下挂成员数量
-		uchar MemberCid[100];// 下挂成员 CANid 列表
+		uint MemberQty;	     // Number of attached members
+		uchar MemberCid[100];// List of attached member CANids
 	};
 	
 	struct
 	{
-		uint GtwyHandle; 	 // 网关句柄 ( 包含 类型 / 网段 / 网关 CANid )
-		uint IPaddr;		 // IP 地址, e.g. 192.168.1.254    
-		uint IPport;        // IP 端口，e.g. 8888
+		uint GtwyHandle; 	 // Gateway handle (includes type / segment / gateway CANid)
+		uint IPaddr;		 // IP address, e.g. 192.168.1.254    
+		uint IPport;         // IP port, e.g. 8888
 
-		uint BTRidx;	     // 网关 CAN 比特率
+		uint BTRidx;	     // Gateway CAN bitrate
 
-		uint SerialNo;	     // 网关 S/N 号
-		uint FirmVer;	     // 网关固件版本
-		char  ModelStr[64];
+		uint SerialNo;	     // Gateway S/N number
+		uint FirmVer;	     // Gateway firmware version
+		char  ModelStr[64];  // Gateway model information
 
-		uint MemberQty;	 // 下挂成员数量
-		uchar MemberCid[100];// 下挂成员 CANid 列表
+		uint MemberQty;	     // Number of attached members
+		uchar MemberCid[100];// List of attached member CANids
 	}tcp;
 
 	struct
 	{
-		uchar  CANnid : 8;	 // 网关的CAN-ID
-		uchar  zone : 8;     // CAN网段号
-		ushort type : 16;	 // 网关类型（定义了网关类型，CAN网类型(i.e.CAN20/CAN30)也就确定了）
+		uchar  CANnid : 8;	 // Gateway CAN-ID
+		uchar  zone : 8;     // CAN segment number
+		ushort type : 16;	 // Gateway type (defines the gateway type and CAN network type, i.e., CAN20/CAN30)
 
-		uchar IP[4];		 // IP 地址: IP[3]=192, IP[2]=168, IP[1]=1, IP[0]=100 -> ip = 192.168.1.100    
-		uint IPport;        // IP 端口，e.g. 8888
+		uchar IP[4];		 // IP address: IP[3]=192, IP[2]=168, IP[1]=1, IP[0]=100 -> ip = 192.168.1.100    
+		uint IPport;         // IP port, e.g. 8888
 
-		uint BTRidx;	     // 网关 CAN 比特率
+		uint BTRidx;	     // Gateway CAN bitrate
 
-		uint SerialNo;	     // 网关 S/N 号
-		uint FirmVer;	     // 网关固件版本
-		char  ModelStr[64];
+		uint SerialNo;	     // Gateway S/N number
+		uint FirmVer;	     // Gateway firmware version
+		char  ModelStr[64];  // Gateway model information
 
-		uint MemberQty;	 // 下挂成员数量
-		uchar MemberCid[100];// 下挂成员 CANid 列表
+		uint MemberQty;	     // Number of attached members
+		uchar MemberCid[100];// List of attached member CANids
 	}detail;
 
 }GATEWAY_INFO_OBJ;
