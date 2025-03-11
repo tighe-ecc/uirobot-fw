@@ -1,21 +1,13 @@
-#include <iostream>
-#include "uirSDKcommon3.h"
-#include "UIError.h"
-#include "CAN30SDK.h"
-#include <thread>
-#include <cmath>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <chrono>
+#include "motor_actuator.h"
 
 // Global variables
-unint g_GtwyHandle;
-static std::ofstream logFile;
+unsigned int MyActuator::g_GtwyHandle;
+int MyActuator::MemberQuantity = 0;
 
-// Function to configure the motor
-void configureMotors() {
-    std::cout << "Motor configuration is starting...\n";
+// Connect to the gateway and store the gateway handle
+void MyActuator::connectGateway()
+{
+    std::cout << "Starting gateway connection...\n";
     ERRO err = 0;
     unint unRxData = 0;
 
@@ -36,26 +28,36 @@ void configureMotors() {
         Gtwy.detail.IP[1] = 1;
         Gtwy.detail.IP[2] = 168;
         Gtwy.detail.IP[3] = 192;
-        if ((!Gtwy.tcp.IPaddr)) {
-            std::cout << "Gateway parameter error!\n";
-            return;
-        }
+        if ((!Gtwy.tcp.IPaddr)) {std::cout << "Gateway parameter error!\n"; return;}
         Gtwy.tcp.IPport = 8888;
     }
 
     MEMBER_INFO_OBJ Member[100]; // Members (Max. 100 members)
     // Initialize the gateway
     err = SdkStartCanNet(&Gtwy, Member, 0);
-    // Record the gateway handle
-    g_GtwyHandle = Gtwy.GtwyHandle;
-
     if (err) {
         std::cout << "No gateway found, please check the gateway communication parameters!\n";
         return;
     }
 
+    // Record the gateway handle
+    g_GtwyHandle = Gtwy.GtwyHandle;
+    MemberQuantity = Gtwy.MemberQty;
+}
+
+// Configure all motors on the bus
+void MyActuator::configureMotors()
+{
+    std::cout << "Configuring motors on gateway...\n";
+    ERRO err = 0;
+    unint unRxData = 0;
+
+    MEMBER_INFO_OBJ Member[100]; // Members (Max. 100 members)
+    // Get the list of members in the gateway
+    err = SdkGetMemberList(g_GtwyHandle, Member);
+    if (err) {std::cout << "SdkGetMemberList Fail!\n"; return;}
+
     // Number of members
-    int MemberQuantity = Gtwy.MemberQty;
     int CANid = 0;
 
     for (int i = MemberQuantity; i > 0; i--) {
@@ -170,48 +172,32 @@ void configureMotors() {
     }
 }
 
-// Function to set the motor to a specific position
-void moveActuatorToPosition(int CANid, int position) {
-    // std::cout << "Moving actuator to position: " << position << std::endl;
+// Set the target position for the motor
+void MyActuator::setMotorPos(int position)
+{
+    // std::cout << "Setting new motor target position for CANid " << CANid << ": " << position << std::endl;
 
-    // One-time initialization
-    static bool firstRun = true;
-    static ERRO err = 0;
-    static unint unRxData = 0;
-    static int RxPr;    // Position feedback
-    static int RxVelo;    // Velocity feedback
-    static int lastVelocity = 0;
+    // Create a new log file if this is the first run
+    if (md.firstRun) {
+        md.firstRun = false;
 
-    static MOTION_STATUS_OBJ MotionStatus;
-    static int Velo;
-    static int Prel;
-    static int Pabs;
-
-    static auto startTime = std::chrono::steady_clock::now();
-    static auto lastTime = startTime;
-
-    if (firstRun) {
-        firstRun = false;
-
-        err = 0;
-        unRxData = 0;
-
-        logFile.open("../utils/position_log.csv");
-        logFile << "ClockTime,ActualPosition,SetpointVelocity\n";
+        md.logFile.open("../utils/position_log_" + std::to_string(CANid) + ".csv");
+        md.logFile << "ClockTime,ActualPosition,SetpointVelocity\n";
     }
 
     // Get the current actuator state
-    err = SdkGetMotionStatus(g_GtwyHandle, CANid, &MotionStatus, &Velo, &Prel, &Pabs);
-    if (err != 0) {
+    md.err = SdkGetMotionStatus(g_GtwyHandle, CANid, &md.MotionStatus, &md.Velo, &md.Prel, &md.Pabs);
+    if (md.err != 0) {
         std::cout << "CANid:" << CANid << "    SdkGetMotionStatus Fail!\n";
-        logFile.close();
+        md.logFile.close();
         return;
     }
 
     // Record the time elapsed since the last iteration
     auto currentTime = std::chrono::steady_clock::now();
-    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count();
-    lastTime = currentTime;
+    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - md.lastTime).count();
+    std::cout << "Elapsed time: " << elapsedTime << " ms" << std::endl;
+    md.lastTime = currentTime;
     
     // PID controller parameters
     float Kp = 3.0f;  // Proportional gain
@@ -219,23 +205,23 @@ void moveActuatorToPosition(int CANid, int position) {
     float Kd = 0.508f; // Derivative gain
 
     // Calculate the error between the desired and actual position
-    float positionError = position - Pabs;
+    float positionError = position - md.Pabs;
 
     // Calculate the integral of the position error
-    static float integralError = 0;
-    integralError += positionError * elapsedTime / 1000.0;
-    if (Ki * integralError > 160000) {
+    // static float integralError = 0;
+    md.integralError += positionError * elapsedTime / 1000.0;
+    if (Ki * md.integralError > 160000) {
         // std::cout << "Integral error is too high, limiting to 160000\n";
-        integralError = 160000 / Ki;
+        md.integralError = 160000 / Ki;
     }
 
     // Calculate the derivative of the position error
-    static float lastPositionError = 0;
-    float derivativeError = (positionError - lastPositionError) / elapsedTime * 1000.0;
-    lastPositionError = positionError;
+    // static float lastPositionError = 0;
+    float derivativeError = (positionError - md.lastPositionError) / elapsedTime * 1000.0;
+    md.lastPositionError = positionError;
 
     // Calculate the control output
-    int setpointVelocity = static_cast<int>(Kp * positionError + Ki * integralError + Kd * derivativeError);
+    int setpointVelocity = static_cast<int>(Kp * positionError + Ki * md.integralError + Kd * derivativeError);
     if (std::abs(setpointVelocity) > 160000) {
         // std::cout << "Setpoint velocity is too high, limiting to 160000\n";
         setpointVelocity = (setpointVelocity > 0) ? 160000 : -160000;
@@ -243,12 +229,12 @@ void moveActuatorToPosition(int CANid, int position) {
 
     // Apply acceleration limit
     static const int maxAcceleration = 131; // Maximum change in velocity per millisecond
-    int velocityChange = setpointVelocity - lastVelocity;
+    int velocityChange = setpointVelocity - md.lastVelocity;
     if (std::abs(velocityChange) > maxAcceleration * elapsedTime) {
         // std::cout << "Acceleration limit exceeded, limiting velocity change\n";
-        setpointVelocity = lastVelocity + ((velocityChange > 0) ? maxAcceleration * elapsedTime : -maxAcceleration * elapsedTime);
+        setpointVelocity = md.lastVelocity + ((velocityChange > 0) ? maxAcceleration * elapsedTime : -maxAcceleration * elapsedTime);
     }
-    lastVelocity = setpointVelocity;
+    md.lastVelocity = setpointVelocity;
 
     // std::cout << "Kp*PosErr: " << Kp * positionError 
     //           << "    Ki*IntErr: " << Ki * integralError
@@ -256,48 +242,39 @@ void moveActuatorToPosition(int CANid, int position) {
     //           << "    SetVel: " << setpointVelocity << std::endl;
 
     // Update the target motor velocity
-    err = SdkSetJogMxn(g_GtwyHandle, CANid, setpointVelocity, &RxVelo);
-    if (err != 0) {
+    md.err = SdkSetJogMxn(g_GtwyHandle, CANid, setpointVelocity, &md.RxVelo);
+    if (md.err != 0) {
         std::cout << "CANid:" << CANid << "    SdkSetJogMxn Fail!\n";
-        logFile.close();
+        md.logFile.close();
         return;
     }
 
-    // // Start tracking to target motor velocity
-    // err = SdkSetBeginMxn(g_GtwyHandle, CANid);
-    // if (err != 0) {
-    //     std::cout << "CANid:" << CANid << "    SdkSetBeginMxn Fail!\n";
-    //     logFile.close();
-    //     return;
-    // }
-
     // Log the setpoint and actual positions
-    logFile << std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count()/1000.0 << "," << Pabs << "," << setpointVelocity << "\n";
+    md.logFile << std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - md.startTime).count()/1000.0 << "," << md.Pabs << "," << setpointVelocity << "\n";
+}
 
-    // // Sleep for a short duration to prevent busy-waiting
-    // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-
-void startActuatorMotion() {
-    // Start tracking to target motor velocity
+// Start all motors on bus tracking to latest target motion
+void MyActuator::startMotion() {
     ERRO err = 0;
     err = SdkSetBeginMxn(g_GtwyHandle, 0);
     if (err != 0) {
         std::cout << "CANid:" << 0 << "    SdkSetBeginMxn Fail!\n";
-        logFile.close();
+        // logFile.close();
         return;
     }
 }
 
-void closeActuatorStream(int CANid) {
+// Close the actuator data stream and power off the motor drivers
+void MyActuator::disableMotors()
+{
     std::cout << "Closing actuator stream..." << std::endl;
     ERRO err = 0;
     unint unRxData = 0;
-
-    // Close the log file
-    logFile.close();
-
-    // Turn off motor driver
-    err = SdkSetMotorOn(g_GtwyHandle, CANid, 0, &unRxData);
-    if (err != 0) { std::cout << "CANid:" << CANid << "    SdkSetMotorOn Fail!\n"; return; }
+    
+    // // Close the log file
+    // logFile.close();
+    
+    // Turn off all motor drivers on bus
+    err = SdkSetMotorOn(g_GtwyHandle, 0, 0, &unRxData);
+    if (err != 0) { std::cout << "CANid:" << 0 << "    SdkSetMotorOn Fail!\n"; return; }
 }

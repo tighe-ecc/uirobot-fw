@@ -13,11 +13,10 @@
 std::queue<int> setpoint_queue;
 std::mutex queue_mutex;
 std::condition_variable queue_cv;
-
-// void moveActuatorToPosition(int position) {
-//     // Placeholder function to move the actuator
-//     std::cout << "Moving actuator to position: " << position << std::endl;
-// }
+    
+// Initialize motor objects
+MyActuator neck(5);
+MyActuator waist(11);
 
 void monitorLogFile(const std::string& logfile_path) {
     std::ifstream logfile(logfile_path);
@@ -93,8 +92,7 @@ void monitorLogFile(const std::string& logfile_path) {
     }
 
     logfile.close();
-    closeActuatorStream(5);
-    closeActuatorStream(11);
+    MyActuator::disableMotors();
 }
 
 void processSetpoints() {
@@ -112,10 +110,10 @@ void processSetpoints() {
         lock.unlock(); // Unlock the mutex
 
         // Move the actuator to the new position
-        moveActuatorToPosition(5, positions[0]);
-        // moveActuatorToPosition(11, positions[1]);
+        neck.setMotorPos(positions[0]);
+        // waist.setMotorPos(positions[1]);
 
-        startActuatorMotion();
+        // MyActuator::startMotion();
 
         // std::this_thread::sleep_for(std::chrono::milliseconds(50)); // Check every 25ms (40Hz)
     }
@@ -124,8 +122,10 @@ void processSetpoints() {
 int main() {
     std::string logfile_path = "c:\\Users\\tighe\\uirobot-fw\\cloudgate\\setpoints.csv";
 
-    // Configure the motor
-    configureMotors();
+    // Connect to the gateway and configure the motors
+    MyActuator::connectGateway();
+    MyActuator::configureMotors();
+
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     // Start the monitoring and processing threads
