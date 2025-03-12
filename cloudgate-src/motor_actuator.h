@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <chrono>
+#include <algorithm>
 
 class MyActuator {
 public:
@@ -24,12 +25,13 @@ public:
         md.lastPositionError = 0;
         md.startTime = std::chrono::steady_clock::now();
         md.lastTime = std::chrono::steady_clock::now();
+        instances.push_back(this);
     }
 
     ~MyActuator() {
-        if (md.logFile.is_open()) {
-            md.logFile.close();
-        }
+        // Remove this instance from the instances vector
+        auto it = std::remove(instances.begin(), instances.end(), this);
+        instances.erase(it, instances.end());
     }
 
     // Static methods
@@ -37,6 +39,7 @@ public:
     static void configureMotors();  // Configure all motors on bus
     static void startMotion();  // Start tracking to target motor velocity
     static void disableMotors();  // Close the actuator stream
+    static void closeAllLogFiles();  // Close all open log files
 
     // Instance methods
     void setMotorPos(int position);
@@ -45,6 +48,7 @@ private:
     int CANid;
     static unsigned int g_GtwyHandle;
     static int MemberQuantity;
+    static std::vector<MyActuator*> instances;  // Vector to keep track of all instances
 
     struct MotionData {
         bool firstRun;

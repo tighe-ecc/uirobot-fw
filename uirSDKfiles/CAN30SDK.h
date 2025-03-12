@@ -158,7 +158,7 @@ Param : GtwyHandle		Gateway handle
 						站点
 		index			Gets the parameter index  The value can only be the following:
 						获取参数下标        只能是如下参数:
-					PPS_SysUpdate       0 (System upgrade)（系统升级）						
+						PPS_SysUpdate       0 (System upgrade)（系统升级）						
 						PPS_BDR             1 (serial baud rate)（串口波特率）
 						PPS_Parity			3 （？？）
 						PPS_BTR				5  (CAN bit rate)（CAN 比特率）

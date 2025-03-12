@@ -15,25 +15,25 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//                                            静 态 库 函 数 指 针 (原 型 / 样 式)
+//                                            Static Library Function Pointers (Prototypes / Styles)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//【注意】1 个 CAN 网络 = 1 个 CAN 网关（领导）+ N 个 CAN 成员（员工）
+//【Note】1 CAN Network = 1 CAN Gateway (Leader) + N CAN Members (Employees)
 
-//【注意】调用 StartCanNet(...)，打开 CAN 网络  = 打开硬件端口 + 打开网关 + 统计网关信息 + 统计全部成员信息 + 完成一切准备工作；开启后即可对成员操作
+//【Note】Calling StartCanNet(...), opens the CAN network = opens the hardware port + opens the gateway + collects gateway information + collects all member information + completes all preparations; after opening, you can operate on the members
 
-//【注意】调用 StartCanNet(...), Sdk 会分配唯一的 GtwyHandle 给到用户指定的 Gtwy；之后对该网关的操作，都应提供该 GtwyHandle
+//【Note】Calling StartCanNet(...), the SDK will allocate a unique GtwyHandle to the user-specified gateway; subsequent operations on the gateway should provide this GtwyHandle
 
-//【注意】最多同时支持32个"串口－CAN网络"（UIM2502/UIM2503）+ 128个"以太网-CAN网络"(UIM2512/UIM2513); 每个CAN网络包含 1个网关和最多100个成员 
+//【Note】Supports up to 32 "Serial-CAN networks" (UIM2502/UIM2503) + 128 "Ethernet-CAN networks" (UIM2512/UIM2513) simultaneously; each CAN network contains 1 gateway and up to 100 members
 
-//【注意】原来的全局设置函数 例如 SetgORG / SetgSPD... 等均已取消; 需要全局设置，只需将 CANid = 127，即可对成员进行全局设置/查询。
+//【Note】The original global setting functions such as SetgORG / SetgSPD... have been canceled; for global settings, just set CANid = 127 to perform global settings/queries on the members.
 
-//【RTCN】用于处理异步消息，即非用户主动发起的查询/设置，或者用户不可预见的反馈。例如传感器触发，点位运动到位通知，堵转检出通知等
+//【RTCN】Used to handle asynchronous messages, i.e., feedback that is not initiated by the user or cannot be foreseen by the user. For example, sensor triggers, point motion completion notifications, stall detection notifications, etc.
 
-//【注意】每个网关(Gtwy)都应（通过其 GtwyHandle）注册一个回调函数
+//【Note】Each gateway (Gtwy) should register a callback function through its GtwyHandle
 
-//【注意】函数返回值 =0 表示正确；!=0 表示发生错误（切记 返回 -1 仅为错误之一，并非所有错误都返回-1）; 发生错误时，可根据返回值对照错误代码表确定错误
+//【Note】Function return value = 0 indicates correct; != 0 indicates an error occurred (remember, return -1 is only one of the errors, not all errors return -1); when an error occurs, you can determine the error based on the return value against the error code table
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

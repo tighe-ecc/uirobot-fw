@@ -93,6 +93,8 @@ void monitorLogFile(const std::string& logfile_path) {
 
     logfile.close();
     MyActuator::disableMotors();
+    MyActuator::closeAllLogFiles();
+    std::terminate();
 }
 
 void processSetpoints() {
@@ -111,11 +113,9 @@ void processSetpoints() {
 
         // Move the actuator to the new position
         neck.setMotorPos(positions[0]);
-        // waist.setMotorPos(positions[1]);
+        waist.setMotorPos(positions[1]);
 
-        // MyActuator::startMotion();
-
-        // std::this_thread::sleep_for(std::chrono::milliseconds(50)); // Check every 25ms (40Hz)
+        MyActuator::startMotion();
     }
 }
 

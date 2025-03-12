@@ -2,12 +2,12 @@ import time
 import numpy as np
 
 # Input for the period of the ramp up and down (in seconds)
-period = 4
-amplitude = 3200
-duration = 4
+period = 10
+amplitude = 3200*5
+duration = 5
 
 # Frequency (Hz)
-frequency = 2
+frequency = 24
 
 # Number of points for each period
 num_points = int(period * frequency)
@@ -24,7 +24,7 @@ setpoints = []
 
 for i, setpoint in enumerate(profile):
     timestamp = (i / frequency)
-    setpoints.append(f'{timestamp},{setpoint},{setpoint}\n')
+    setpoints.append(f'{timestamp},{setpoint},{-setpoint}\n')
     # time.sleep(1 / frequency)  # 40Hz
 
 # Write all setpoints to the logfile at once

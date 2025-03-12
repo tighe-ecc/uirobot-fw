@@ -129,14 +129,14 @@ typedef struct _RCV_BUF_OBJ{
 	unint      qty[MAX_CANID_RANGE];      // 各站点已缓存的报文条数
 	UI_MSG_OBJ msg[MAX_CANID_RANGE][100]; // 站点报文缓存，每个站点最多缓存接收 32 条报文（格式 = id cw dl d0...d8） 
 
-} RCV_BUF_OBJ; // 指定网关下的子站点 接收缓冲区数据结构
-#pragma pack( )
+// Substation receive buffer data structure under the specified gateway
+#pragma pack()
 
-#define IS_SET_MSG 1 // 需要反馈期望值
-#define IS_GET_MSG 0 // 需要反馈当前值
+#define IS_SET_MSG 1 // Need to feedback the expected value
+#define IS_GET_MSG 0 // Need to feedback the current value
 
-#define DO_ACK 1 // 期待反馈
-#define NO_ACK 0 // 无需反馈
+#define DO_ACK 1 // Expect feedback
+#define NO_ACK 0 // No feedback needed
 
 #define _NODATA_ NULL
 #define _NOTIX_  0xFFFF
