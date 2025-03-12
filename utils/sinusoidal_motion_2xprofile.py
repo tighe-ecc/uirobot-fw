@@ -17,7 +17,7 @@ t = np.linspace(0, duration, num=int(duration * frequency))
 profile = amplitude * np.sin(2 * np.pi * t / period)
 
 # Logfile path
-logfile_path = 'c:\\Users\\tighe\\uirobot-fw\\cloudgate\\setpoints.csv'
+logfile_path = 'c:\\Users\\tighe\\uirobot-fw\\cloudgate\\test.csv'
 
 # Collect all setpoints in a list
 setpoints = []

@@ -181,7 +181,7 @@ void MyActuator::setMotorPos(int position)
     // Record the time elapsed since the last iteration
     auto currentTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - md.lastTime).count();
-    std::cout << "Elapsed time: " << elapsedTime << " ms, CANid: " << CANid << std::endl;
+    // std::cout << "Elapsed time: " << elapsedTime << " ms, CANid: " << CANid << std::endl;
     md.lastTime = currentTime;
 
     // Create a new log file if this is the first run
@@ -263,10 +263,10 @@ void MyActuator::setMotorPos(int position)
     //TODO: add actual velocity
     md.logFile << std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - md.startTime).count()/1000.0 << "," << md.Pabs << "," << setpointVelocity << "\n";
 
-    // // Wait until 100ms have passed since md.lastTime to proceed
-    // while (std::chrono::steady_clock::now() < md.lastTime + std::chrono::milliseconds(200)) {
-    //     std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    // }
+    // Wait until time has passed since md.lastTime to proceed
+    while (std::chrono::steady_clock::now() < md.lastTime + std::chrono::milliseconds(200)) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
 }
 
 // Start all motors on bus tracking to latest target motion

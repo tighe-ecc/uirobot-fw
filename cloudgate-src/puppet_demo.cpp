@@ -10,16 +10,22 @@
 #include <condition_variable>
 #include <sstream>
 
-std::queue<int> setpoint_queue;
+std::queue<float> setpoint_queue;
 std::mutex queue_mutex;
 std::condition_variable queue_cv;
     
 // Initialize motor objects
-MyActuator neck(5);
-MyActuator waist(11);
+MyActuator leftMotor(5);
+MyActuator rightMotor(11);
+float cpm = 3200 / 0.24;  // counts/m = counts/rev / m/rev
 
+// Function to transform the XY coordinates in meters to actuator positions in counts
+std::pair<float, float> puppet2motor(float X, float Y);
+
+// Function to monitor the log file and push the setpoints to the queue
 void monitorLogFile(const std::string& logfile_path) {
     std::ifstream logfile(logfile_path);
+    std::ofstream setpoint_log("c:\\Users\\tighe\\uirobot-fw\\utils\\setpoint_log.csv");
     std::string line;
     auto start_time = std::chrono::steady_clock::now();
 
@@ -30,6 +36,11 @@ void monitorLogFile(const std::string& logfile_path) {
         return;
     }
 
+    if (!setpoint_log.is_open()) {
+        std::cerr << "Failed to open setpoint log file: ../utils/setpoint_log.csv" << std::endl;
+        return;
+    }
+
     float timestamp = 0; // Initialize timestamp in seconds
     std::vector<float> positions;
     char comma;
@@ -37,8 +48,6 @@ void monitorLogFile(const std::string& logfile_path) {
     while (true) {
         auto current_time = std::chrono::steady_clock::now();
         auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count()/1000.0; // Convert to seconds
-
-        // std::cout << "Elapsed time: " << elapsed_time << "s, Timestamp: " << timestamp << "s, Difference: " << (elapsed_time - timestamp) << "s" << std::endl;
 
         if (elapsed_time > timestamp) {           
             // Read the next line from the log file 
@@ -70,16 +79,19 @@ void monitorLogFile(const std::string& logfile_path) {
                 std::cerr << "Error parsing positions in line: " << line << std::endl;
                 continue;
             } else {
-                // std::cout << "Parsed timestamp: " << timestamp << ", positions: ";
-                // for (const auto& pos : positions) std::cout << pos << " ";
-                // std::cout << std::endl;
-                
                 // Lock the mutex to safely access the queue and push the new positions
                 {
                     std::lock_guard<std::mutex> lock(queue_mutex);
-                    for (const auto& pos : positions) {
-                        setpoint_queue.push(pos);
-                    }
+
+                    // Convert the puppet positions to motor positions
+                    auto motor_positions = puppet2motor(positions[0], positions[1]);
+                    
+                    // Push the motor positions to the queue
+                    setpoint_queue.push(motor_positions.first);
+                    setpoint_queue.push(motor_positions.second);
+
+                    // Log the timestamp and motor positions to the setpoint log file
+                    setpoint_log << timestamp << "," << motor_positions.first << "," << motor_positions.second << std::endl;
                 }
                 
                 // Notify the processing thread
@@ -87,16 +99,20 @@ void monitorLogFile(const std::string& logfile_path) {
             }
         }
 
-
         std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Check every 10ms (40Hz)
     }
 
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    // Close the log files and exit the program
     logfile.close();
+    setpoint_log.close();
     MyActuator::disableMotors();
     MyActuator::closeAllLogFiles();
     std::terminate();
 }
 
+// Function to push setpoints to the actuators
 void processSetpoints() {
     while (true) {
         // Lock the mutex and wait until the queue is not empty
@@ -106,31 +122,52 @@ void processSetpoints() {
         // Get the most recent positions from the queue
         std::vector<float> positions;
         while (!setpoint_queue.empty()) {
-            positions.push_back(setpoint_queue.front());
+            positions.push_back(static_cast<float>(setpoint_queue.front()));
             setpoint_queue.pop();
         }
         lock.unlock(); // Unlock the mutex
 
-        // Print the positions
-        std::cout << "Processing positions: ";
-        for (const auto& pos : positions) {
-            std::cout << pos << " ";
-        }
-        std::cout << std::endl;
-
         // Move the actuator to the new position
-        neck.setMotorPos(positions[0]);
-        waist.setMotorPos(positions[1]);
+        leftMotor.setMotorPos(positions[0]);
+        rightMotor.setMotorPos(positions[1]);
 
         MyActuator::startMotion();
-        
+
+        // // Simulate actuator movement
+        // std::cout << "a1: " << positions[0] << ", a2: " << positions[1] << std::endl;
         // std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
+// Transform the XY coordinates in meters to actuator positions in counts
+std::pair<float, float> puppet2motor(float X, float Y) {
+    // Calculate distance from motor to target position, subtract d0, convert to counts
+    float a1 = sqrt(
+        pow((X - leftMotor.getXpos()), 2.0) + 
+        pow((Y - leftMotor.getYpos()), 2.0)
+    ) * cpm - leftMotor.getD0();  // counts
+
+    float a2 = sqrt(
+        pow((X - rightMotor.getXpos()), 2.0) + 
+        pow((Y - rightMotor.getYpos()), 2.0)
+    ) * cpm - rightMotor.getD0();  // counts
+
+    return std::make_pair(a1, a2);
+}
+
 int main() {
     // Path to the log file  
-    std::string logfile_path = "c:\\Users\\tighe\\uirobot-fw\\cloudgate\\setpoints.csv";
+    std::string logfile_path = "c:\\Users\\tighe\\uirobot-fw\\cloudgate\\setpoints_xy.csv";
+
+    // Set the initial positions of the motors
+    leftMotor.setXpos(0);  // meters
+    leftMotor.setYpos(2);  // meters
+    leftMotor.setD0(sqrt(pow(leftMotor.getXpos(), 2.0) + pow(leftMotor.getYpos(), 2.0)) * cpm);
+    std::cout << "leftMotor D0: " << leftMotor.getD0() << std::endl;
+    rightMotor.setXpos(0.5);
+    rightMotor.setYpos(2);
+    rightMotor.setD0(sqrt(pow(rightMotor.getXpos(), 2.0) + pow(rightMotor.getYpos(), 2.0)) * cpm);
+    std::cout << "rightMotor D0: " << rightMotor.getD0() << std::endl;
 
     // Connect to the gateway and configure the motors
     MyActuator::connectGateway();

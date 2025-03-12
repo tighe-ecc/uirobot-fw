@@ -44,6 +44,33 @@ public:
     // Instance methods
     void setMotorPos(int position);
 
+    // Getter and Setter for xpos
+    float getXpos() const {
+        return md.xpos;
+    }
+
+    void setXpos(float xpos) {
+        md.xpos = xpos;
+    }
+
+    // Getter and Setter for ypos
+    float getYpos() const {
+        return md.ypos;
+    }
+
+    void setYpos(float ypos) {
+        md.ypos = ypos;
+    }
+
+    // Getter and Setter for d0
+    float getD0() const {
+        return md.d0;
+    }
+
+    void setD0(float d0) {
+        md.d0 = d0;
+    }
+    
 private:
     int CANid;
     static unsigned int g_GtwyHandle;
@@ -66,6 +93,9 @@ private:
         std::chrono::steady_clock::time_point startTime;
         std::chrono::steady_clock::time_point lastTime;
         std::ofstream logFile;
+        float xpos;  // x position of motor
+        float ypos;  // y position of motor 
+        float d0;  // distance from puppet CRF origin in counts
     } md;
 };
 
