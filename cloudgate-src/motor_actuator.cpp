@@ -101,14 +101,14 @@ void MyActuator::configureMotors()
             }
 
             // Set acceleration/deceleration rate to that of gravity
-            err = SdkSetAcceleration(g_GtwyHandle, CANid, 130667*10, &unRxData);
+            err = SdkSetAcceleration(g_GtwyHandle, CANid, 130667, &unRxData);
             if (err) {
                 std::cout << "CANid:" << CANid << "    SdkGetAcceleration Fail!\n";
                 return;
             } else {
                 std::cout << "CANid:" << CANid << "    Acceleration rate = " << unRxData << "\n";
             }
-            err = SdkSetDeceleration(g_GtwyHandle, CANid, 130667*10, &unRxData);
+            err = SdkSetDeceleration(g_GtwyHandle, CANid, 130667, &unRxData);
             if (err) {
                 std::cout << "CANid:" << CANid << "    SdkGetAcceleration Fail!\n";
                 return;
@@ -243,10 +243,10 @@ void MyActuator::setMotorPos(int position)
     // //           << "    SetVel: " << setpointVelocity << std::endl;
 
     //  Update the target motor position and velocity
-    int setpointVelocity = static_cast<int>(positionError / 100 * 1000.0);
+    int setpointVelocity = static_cast<int>(positionError / 50.0 * 1000.0);
     md.err = SdkSetPtpMxnA(g_GtwyHandle, CANid, setpointVelocity, position, &md.RxVelo, &md.RxPr);
     if (md.err != 0) {
-        std::cout << "CANid:" << CANid << "    SdkSetJogMxn Fail!\n";
+        std::cout << "CANid:" << CANid << "    SdkSetPtpMxnA Fail!\n";
         md.logFile.close();
         return;
     }
@@ -264,7 +264,7 @@ void MyActuator::setMotorPos(int position)
     md.logFile << std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - md.startTime).count()/1000.0 << "," << md.Pabs << "," << setpointVelocity << "\n";
 
     // // Wait until 100ms have passed since md.lastTime to proceed
-    // while (std::chrono::steady_clock::now() < md.lastTime + std::chrono::milliseconds(100)) {
+    // while (std::chrono::steady_clock::now() < md.lastTime + std::chrono::milliseconds(200)) {
     //     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     // }
 }

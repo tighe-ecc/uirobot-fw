@@ -62,6 +62,35 @@
         }
     },
     {
+        "label": "Build wind winch",
+        "type": "shell",
+        "command": "g++",
+        "args": [
+            "-g",
+            "-D_WINDOWS",  // Required for proper macro definition
+            "${workspaceFolder}/cloudgate-src/wind_winch.cpp",
+            "-o",
+            "${workspaceFolder}/cloudgate/wind_winch",
+            "-I",
+            "${workspaceFolder}/uirSDKfiles",
+            "-L",
+            "${workspaceFolder}/UirSdkLib",
+            "-l",
+            "libUirSdkWin64",
+            "-mconsole" // Specify console application
+        ],
+        "options": {
+            "cwd": "${workspaceFolder}",
+        },
+        "problemMatcher": [
+            "$gcc"
+        ],
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        }
+    },
+    {
         "label": "Build sandbox",
         "type": "shell",
         "command": "g++",

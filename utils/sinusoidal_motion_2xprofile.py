@@ -3,7 +3,7 @@ import numpy as np
 
 # Input for the period of the ramp up and down (in seconds)
 period = 10
-amplitude = 3200*5
+amplitude = 3200
 duration = 5
 
 # Frequency (Hz)
