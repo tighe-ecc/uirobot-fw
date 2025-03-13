@@ -15,7 +15,7 @@ std::mutex queue_mutex;
 std::condition_variable queue_cv;
     
 // Initialize motor objects
-MyActuator leftMotor(5);
+MyActuator leftMotor(10);
 MyActuator rightMotor(11);
 float cpm = 3200 / 0.24;  // counts/m = counts/rev / m/rev
 
@@ -104,11 +104,20 @@ void monitorLogFile(const std::string& logfile_path) {
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    // Close the log files and exit the program
+    // Close the log files
     logfile.close();
     setpoint_log.close();
-    MyActuator::disableMotors();
     MyActuator::closeAllLogFiles();
+    
+    // Return puppet to zero position
+    leftMotor.returnToZero();
+    rightMotor.returnToZero();
+    MyActuator::startMotion();
+
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    
+    // Disable the motors and terminate the program
+    MyActuator::disableMotors();    
     std::terminate();
 }
 
@@ -142,15 +151,15 @@ void processSetpoints() {
 // Transform the XY coordinates in meters to actuator positions in counts
 std::pair<float, float> puppet2motor(float X, float Y) {
     // Calculate distance from motor to target position, subtract d0, convert to counts
-    float a1 = sqrt(
+    float a1 = -sqrt(
         pow((X - leftMotor.getXpos()), 2.0) + 
         pow((Y - leftMotor.getYpos()), 2.0)
-    ) * cpm - leftMotor.getD0();  // counts
+    ) * cpm + leftMotor.getD0();  // counts
 
-    float a2 = sqrt(
+    float a2 = -sqrt(
         pow((X - rightMotor.getXpos()), 2.0) + 
         pow((Y - rightMotor.getYpos()), 2.0)
-    ) * cpm - rightMotor.getD0();  // counts
+    ) * cpm + rightMotor.getD0();  // counts
 
     return std::make_pair(a1, a2);
 }
@@ -160,12 +169,12 @@ int main() {
     std::string logfile_path = "c:\\Users\\tighe\\uirobot-fw\\cloudgate\\setpoints_xy.csv";
 
     // Set the initial positions of the motors
-    leftMotor.setXpos(0);  // meters
-    leftMotor.setYpos(2);  // meters
+    leftMotor.setXpos(-0.546);  // meters
+    leftMotor.setYpos(1);  // meters
     leftMotor.setD0(sqrt(pow(leftMotor.getXpos(), 2.0) + pow(leftMotor.getYpos(), 2.0)) * cpm);
     std::cout << "leftMotor D0: " << leftMotor.getD0() << std::endl;
-    rightMotor.setXpos(0.5);
-    rightMotor.setYpos(2);
+    rightMotor.setXpos(0.483);
+    rightMotor.setYpos(1.2);
     rightMotor.setD0(sqrt(pow(rightMotor.getXpos(), 2.0) + pow(rightMotor.getYpos(), 2.0)) * cpm);
     std::cout << "rightMotor D0: " << rightMotor.getD0() << std::endl;
 

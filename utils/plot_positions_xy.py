@@ -12,7 +12,10 @@ position_files = glob.glob('utils/position_log*.csv')
 
 # Create subplots
 fig, axs = plt.subplots(len(position_files), 1, figsize=(10, 6 * len(position_files)))
-position_files = position_files[::-1]
+
+# Reverse the file list
+# position_files = position_files[::-1]
+
 for i, file in enumerate(position_files):
     df_position = pd.read_csv(file)
     
@@ -30,7 +33,7 @@ for i, file in enumerate(position_files):
     ax1.set_xlabel('Time')
     ax1.set_ylabel('Position')
     ax1.plot(setpoint_time, setpoint_position.iloc[:,i], label='Setpoint Position', color='tab:blue', marker='o')
-    ax1.plot(clock_time, absolute_position, label='Absolute Position', color='tab:orange', marker='o')
+    ax1.plot(clock_time, absolute_position, label='Actual Position', color='tab:orange', marker='o')
     ax1.tick_params(axis='y')
     ax1.legend(loc='upper left')
     ax1.grid(True)

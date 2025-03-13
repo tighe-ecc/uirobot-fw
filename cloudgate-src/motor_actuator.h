@@ -40,9 +40,10 @@ public:
     static void startMotion();  // Start tracking to target motor velocity
     static void disableMotors();  // Close the actuator stream
     static void closeAllLogFiles();  // Close all open log files
-
+    
     // Instance methods
-    void setMotorPos(int position);
+    void setMotorPos(int position);  // Set the target position for the motor
+    void returnToZero();  // Return the motor to zero position
 
     // Getter and Setter for xpos
     float getXpos() const {

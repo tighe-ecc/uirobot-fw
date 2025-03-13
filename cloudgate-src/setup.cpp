@@ -47,7 +47,7 @@ void LowerWinch(int CANid) {
 
 
   // Set the jog mode -> speed 1000
-  err = SdkSetJogMxn(g_GtwyHandle, CANid, 1000,  &RxVelo);
+  err = SdkSetJogMxn(g_GtwyHandle, CANid, -6400,  &RxVelo);
   if (err != 0) { std::cout << "CAN-ID:" << CANid << "SdkSetJogMxn Fail!\n";}
 
   err = SdkSetBeginMxn(g_GtwyHandle, CANid);
@@ -130,4 +130,6 @@ int main() {
   } else {
       std::cout << "Skipping all devices." << std::endl;
   }
+
+  return 0;
 }

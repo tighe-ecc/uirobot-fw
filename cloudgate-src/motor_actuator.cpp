@@ -101,14 +101,14 @@ void MyActuator::configureMotors()
             }
 
             // Set acceleration/deceleration rate to that of gravity
-            err = SdkSetAcceleration(g_GtwyHandle, CANid, 130667, &unRxData);
+            err = SdkSetAcceleration(g_GtwyHandle, CANid, 13066, &unRxData);
             if (err) {
                 std::cout << "CANid:" << CANid << "    SdkGetAcceleration Fail!\n";
                 return;
             } else {
                 std::cout << "CANid:" << CANid << "    Acceleration rate = " << unRxData << "\n";
             }
-            err = SdkSetDeceleration(g_GtwyHandle, CANid, 130667, &unRxData);
+            err = SdkSetDeceleration(g_GtwyHandle, CANid, 130667*10, &unRxData);
             if (err) {
                 std::cout << "CANid:" << CANid << "    SdkGetAcceleration Fail!\n";
                 return;
@@ -199,73 +199,104 @@ void MyActuator::setMotorPos(int position)
         md.logFile.close();
         return;
     }
-
-    // // PID controller parameters
-    // float Kp = 3.0f;  // Proportional gain
-    // float Ki = 56.8f;   // Integral gain
-    // float Kd = 0.508f; // Derivative gain
-
+    
     // Calculate the error between the desired and actual position
     float positionError = position - md.Pabs;
+    int setpointVelocity = 0;
+    int velLimit = 3200*2;  // counts/s
+    int updateRate = 50;  // ms
+    
+    // Set the control mode
+    bool bJog = true;
+    bool bPtp = false;
 
-    // // Calculate the integral of the position error
-    // // static float integralError = 0;
-    // md.integralError += positionError * elapsedTime / 1000.0;
-    // if (Ki * md.integralError > 160000) {
-    //     // std::cout << "Integral error is too high, limiting to 160000\n";
-    //     md.integralError = 160000 / Ki;
-    // }
+    // Jog implementation -----------------------------------------------------
 
-    // // Calculate the derivative of the position error
-    // // static float lastPositionError = 0;
-    // float derivativeError = (positionError - md.lastPositionError) / elapsedTime * 1000.0;
-    // md.lastPositionError = positionError;
+    if (bJog) {
+        // PID controller parameters
+        float Kp = 3.0f;  // Proportional gain
+        float Ki = 2.3f;  // Integral gain
+        float Kd = 0.0f;  // Derivative gain
 
-    // // Calculate the control output
-    // int setpointVelocity = static_cast<int>(Kp * positionError + Ki * md.integralError + Kd * derivativeError);
-    // if (std::abs(setpointVelocity) > 160000) {
-    //     // std::cout << "Setpoint velocity is too high, limiting to 160000\n";
-    //     setpointVelocity = (setpointVelocity > 0) ? 160000 : -160000;
-    // }
+        // Calculate the integral of the position error
+        // static float integralError = 0;
+        md.integralError += positionError * elapsedTime / 1000.0;
+        if (Ki * md.integralError > setpointVelocity) {
+            // std::cout << "Integral error is too high, limiting to 160000\n";
+            md.integralError = setpointVelocity / Ki;
+        }
 
-    // // Apply acceleration limit
-    // static const int maxAcceleration = 131; // Maximum change in velocity per millisecond
-    // int velocityChange = setpointVelocity - md.lastVelocity;
-    // if (std::abs(velocityChange) > maxAcceleration * elapsedTime) {
-    //     // std::cout << "Acceleration limit exceeded, limiting velocity change\n";
-    //     setpointVelocity = md.lastVelocity + ((velocityChange > 0) ? maxAcceleration * elapsedTime : -maxAcceleration * elapsedTime);
-    // }
-    // md.lastVelocity = setpointVelocity;
+        // Calculate the derivative of the position error
+        // static float lastPositionError = 0;
+        float derivativeError = (positionError - md.lastPositionError) / elapsedTime * 1000.0;
+        md.lastPositionError = positionError;
 
-    // // std::cout << "Kp*PosErr: " << Kp * positionError 
-    // //           << "    Ki*IntErr: " << Ki * integralError
-    // //           << "    Kd*DerErr: " << Kd * derivativeError 
-    // //           << "    SetVel: " << setpointVelocity << std::endl;
+        // Calculate the control output
+        setpointVelocity = static_cast<int>(Kp * positionError + Ki * md.integralError + Kd * derivativeError);
+        if (std::abs(setpointVelocity) > velLimit) {
+            // std::cout << "Setpoint velocity is too high, limiting to 160000\n";
+            setpointVelocity = (setpointVelocity > 0) ? velLimit : -velLimit;
+        }
 
+        // Apply acceleration limit
+        static const int maxAcceleration = 131; // Maximum change in velocity per millisecond, ~9.8m/s^2
+        int velocityChange = setpointVelocity - md.lastVelocity;
+        if (std::abs(velocityChange) > maxAcceleration * updateRate) {
+            // std::cout << "Acceleration limit exceeded, limiting velocity change\n";
+            setpointVelocity = md.lastVelocity + ((velocityChange > 0) ? maxAcceleration * updateRate : -maxAcceleration * updateRate);
+        }
+        md.lastVelocity = setpointVelocity;
+
+        // std::cout << "Kp*PosErr: " << Kp * positionError 
+        //           << "    Ki*IntErr: " << Ki * integralError
+        //           << "    Kd*DerErr: " << Kd * derivativeError 
+        //           << "    SetVel: " << setpointVelocity << std::endl;
+        
+        // Update the target motor velocity
+        md.err = SdkSetJogMxn(g_GtwyHandle, CANid, setpointVelocity, &md.RxVelo);
+        if (md.err != 0) {
+                std::cout << "CANid:" << CANid << "    SdkSetJogMxn Fail!\n";
+                md.logFile.close();
+                return;
+            }
+    }
+
+    if (bPtp) {
     //  Update the target motor position and velocity
-    int setpointVelocity = static_cast<int>(positionError / 50.0 * 1000.0);
+    setpointVelocity = static_cast<int>(positionError / 50.0 * 1000.0);
+    if (std::abs(setpointVelocity) > velLimit) {
+        // std::cout << "Setpoint velocity is too high, limiting to 160000\n";
+        setpointVelocity = (setpointVelocity > 0) ? velLimit : -velLimit;
+    }
     md.err = SdkSetPtpMxnA(g_GtwyHandle, CANid, setpointVelocity, position, &md.RxVelo, &md.RxPr);
     if (md.err != 0) {
         std::cout << "CANid:" << CANid << "    SdkSetPtpMxnA Fail!\n";
         md.logFile.close();
-        return;
+        return;}
     }
-
-    // // Update the target motor velocity
-    // md.err = SdkSetJogMxn(g_GtwyHandle, CANid, setpointVelocity, &md.RxVelo);
-    // if (md.err != 0) {
-    //     std::cout << "CANid:" << CANid << "    SdkSetJogMxn Fail!\n";
-    //     md.logFile.close();
-    //     return;
-    // }
-
+     
     // Log the setpoint and actual positions
     //TODO: add actual velocity
     md.logFile << std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - md.startTime).count()/1000.0 << "," << md.Pabs << "," << setpointVelocity << "\n";
 
     // Wait until time has passed since md.lastTime to proceed
-    while (std::chrono::steady_clock::now() < md.lastTime + std::chrono::milliseconds(200)) {
+    while (std::chrono::steady_clock::now() < md.lastTime + std::chrono::milliseconds(updateRate)) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+// Return all motors to zero position
+void MyActuator::returnToZero()
+{
+    std::cout << "Returning all motors to zero position...\n";
+    ERRO err = 0;
+    unint unRxData = 0;
+
+    //  Update the target motor position and velocity
+    err = SdkSetPtpMxnA(g_GtwyHandle, CANid, 3200, 0, &md.RxVelo, &md.RxPr);
+    if (err != 0) {
+        std::cout << "CANid:" << CANid << "    SdkSetPtpMxnA Fail!\n";
+        return;
     }
 }
 
@@ -292,7 +323,10 @@ void MyActuator::disableMotors()
 }
 
 // Close all open log files
-void MyActuator::closeAllLogFiles() {
+void MyActuator::closeAllLogFiles()
+{
+    std::cout << "Closing all log files..." << std::endl;
+
     for (MyActuator* instance : instances) {
         if (instance->md.logFile.is_open()) {
             instance->md.logFile.close();
