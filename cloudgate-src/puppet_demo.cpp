@@ -9,10 +9,12 @@
 #include <mutex>
 #include <condition_variable>
 #include <sstream>
+#include <atomic>
 
 std::queue<float> setpoint_queue;
 std::mutex queue_mutex;
 std::condition_variable queue_cv;
+std::atomic<bool> done(false); // Add this line
     
 // Initialize motor objects
 MyActuator leftMotor(10);
@@ -54,6 +56,8 @@ void monitorLogFile(const std::string& logfile_path) {
             if (!std::getline(logfile, line)) {
                 // If end of file is reached, print a message and exit the loop
                 std::cout << "End of log file reached, exiting monitoring thread." << std::endl;
+                done = true; // Set the flag to true
+                queue_cv.notify_one(); // Notify the processing thread
                 break;
             }
             std::istringstream iss(line);
@@ -114,19 +118,23 @@ void monitorLogFile(const std::string& logfile_path) {
     rightMotor.returnToZero();
     MyActuator::startMotion();
 
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     
     // Disable the motors and terminate the program
-    MyActuator::disableMotors();    
-    std::terminate();
+    MyActuator::disableMotors();
+    return;
 }
 
 // Function to push setpoints to the actuators
 void processSetpoints() {
     while (true) {
-        // Lock the mutex and wait until the queue is not empty
+        // Lock the mutex and wait until the queue is not empty or done is true
         std::unique_lock<std::mutex> lock(queue_mutex);
-        queue_cv.wait(lock, [] { return !setpoint_queue.empty(); });
+        queue_cv.wait(lock, [] { return !setpoint_queue.empty() || done; });
+
+        if (done && setpoint_queue.empty()) {
+            break; // Exit the loop if done is true and the queue is empty
+        }
 
         // Get the most recent positions from the queue
         std::vector<float> positions;
