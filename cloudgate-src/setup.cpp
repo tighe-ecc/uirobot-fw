@@ -131,5 +131,5 @@ int main() {
       std::cout << "Skipping all devices." << std::endl;
   }
 
-  return 0;
+  exit(0);
 }

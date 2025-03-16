@@ -201,6 +201,8 @@
             "${workspaceFolder}/cloudgate/puppet_demo",
             "-I",
             "${workspaceFolder}/uirSDKfiles",
+            "-I",
+            "C:/boost/include/boost-1_87",  // Corrected include path for Boost
             "-L",
             "${workspaceFolder}/UirSdkLib",
             "-l",
