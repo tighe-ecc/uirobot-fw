@@ -14,7 +14,7 @@
 std::queue<float> setpoint_queue;
 std::mutex queue_mutex;
 std::condition_variable queue_cv;
-std::atomic<bool> done(false); // Add this line
+std::atomic<bool> done(false); // Add this line to track end of logfile
     
 // Initialize motor objects
 MyActuator leftMotor(10);
