@@ -2,8 +2,8 @@ import numpy as np
 from animate_path import animate_path
 
 # Inputs
-distance = 0.50  # Distance to move up in meters
-speed = 0.05     # Speed in meters per second
+distance = 0.80  # Distance to move up in meters
+speed = 0.2     # Speed in meters per second
 frequency = 40  # Frequency in Hz
 
 # Calculate the time to traverse the distance

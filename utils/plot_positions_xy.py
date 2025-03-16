@@ -14,7 +14,7 @@ position_files = glob.glob('utils/position_log*.csv')
 fig, axs = plt.subplots(len(position_files), 1, figsize=(10, 6 * len(position_files)))
 
 # Reverse the file list
-# position_files = position_files[::-1]
+position_files = position_files[::-1]
 
 for i, file in enumerate(position_files):
     df_position = pd.read_csv(file)

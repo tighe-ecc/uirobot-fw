@@ -4,7 +4,7 @@ from animate_path import animate_path
 # Inputs
 height = 0.5  # Height of the plus shape in meters
 width = 0.8   # Width of the plus shape in meters
-speed = 0.3  # Speed in meters per second
+speed = 0.6  # Speed in meters per second
 frequency = 40  # Frequency in Hz
 
 # Calculate the time to traverse the height and width
