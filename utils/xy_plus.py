@@ -1,4 +1,7 @@
+#!/usr/bin/env python3
+
 import numpy as np
+import os
 from animate_path import animate_path
 
 # Inputs
@@ -32,8 +35,9 @@ x_vertical_down = np.zeros(num_points_height)
 x = np.concatenate([x_vertical_up, x_horizontal_left, x_horizontal_left[::-1], x_horizontal_right, x_horizontal_right[::-1], x_vertical_down, x_vertical_down[::-1]])
 y = np.concatenate([y_vertical_up, y_horizontal_left, y_horizontal_left[::-1], y_horizontal_right, y_horizontal_right[::-1], y_vertical_down, y_vertical_down[::-1]])
 
-# Logfile path
-logfile_path = 'c:\\Users\\tighe\\uirobot-fw\\cloudgate\\setpoints_xy.csv'
+# Determine logfile path based on operating system
+base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+logfile_path = os.path.join(base_path, 'cloudgate', 'setpoints_xy.csv')
 
 # Collect all setpoints in a list
 setpoints = []
@@ -43,8 +47,12 @@ for i in range(len(x)):
     setpoints.append(f'{timestamp},{x[i]},{y[i]}\n')
 
 # Write all setpoints to the logfile at once
-with open(logfile_path, 'w') as logfile:
-    logfile.writelines(setpoints)
-
+try:
+    with open(logfile_path, 'w') as logfile:
+        logfile.writelines(setpoints)
+    print(f"Successfully wrote setpoints to {logfile_path}")
+except Exception as e:
+    print(f"Error writing to logfile: {e}")
+    
 # Call the animate_path function
 animate_path(x, y, frequency)

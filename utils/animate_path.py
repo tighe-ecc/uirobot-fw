@@ -15,8 +15,9 @@ def animate_path(x, y, frequency):
     # Animate the path
     fig, ax = plt.subplots()
     ax.set_xlim(x_min - x_margin, x_max + x_margin)
-    ax.set_ylim(y_min, y_max + y_margin)
+    ax.set_ylim(y_min - y_margin, y_max + y_margin)
     ax.grid(True)  # Add gridlines
+    ax.set_aspect('equal')  # Make the grid square
 
     line, = ax.plot([], [], 'b-')
     dot, = ax.plot([], [], 'bo')  # Add a red dot
@@ -45,7 +46,7 @@ def animate_path(x, y, frequency):
 
     # Add a button to increase speed by skipping points
     ax_button = plt.axes([0.8, 0.01, 0.1, 0.05])
-    button = Button(ax_button, 'Increase Speed')
+    button = Button(ax_button, 'x2')
     button.on_clicked(increase_speed)
 
     plt.show()
