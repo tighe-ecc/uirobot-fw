@@ -10,8 +10,9 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
-#include <unordered_map>
+#include <map>
 #include <boost/circular_buffer.hpp>
+#include <array>
 #include <atomic>
 
 // Define a structure to hold a joint position
@@ -22,17 +23,27 @@ struct Point {
 
 // Define a structure to hold the buffered keypoint state
 struct KeypointState {
-    boost::circular_buffer<Point> buffer{10}; // Last 10 positions
-    std::atomic<float> latest_x{0};
-    std::atomic<float> latest_y{0};
+    static constexpr size_t BUFFER_SIZE = 10; // Fixed buffer size
+    std::array<Point, BUFFER_SIZE> buffer;    // Fixed-size circular buffer
+    std::atomic<size_t> write_index{0};       // Index for writing
+    std::atomic<size_t> read_index{0};        // Index for reading
+
+    // Add a new point to the buffer (lock-free)
+    void push_back(const Point& point) {
+        size_t index = write_index.fetch_add(1, std::memory_order_relaxed) % BUFFER_SIZE;
+        buffer[index] = point;
+    }
+
+    // Get the latest point from the buffer (lock-free)
+    Point get_latest() const {
+        size_t index = (write_index.load(std::memory_order_relaxed) - 1) % BUFFER_SIZE;
+        return buffer[index];
+    }
 };
 
-std::queue<float> setpoint_queue;
-std::unordered_map<int, KeypointState> keypoint_states;
-
-std::mutex queue_mutex;
-std::condition_variable queue_cv;
-std::atomic<bool> done(false); // Add this line to track end of logfile
+// Define a queue to hold the setpoints for the motors
+std::map<int, KeypointState> keypoint_states;
+std::atomic<bool> done(false);  // Add this line to track end of logfile
 
 // Initialize motor objects
 MyActuator leftMotor(11);
@@ -76,7 +87,6 @@ void monitorLogFile(const std::string& logfile_path) {
                 // If end of file is reached, print a message and exit the loop
                 std::cout << "End of log file reached, exiting monitoring thread." << std::endl;
                 done = true; // Set the flag to true
-                queue_cv.notify_one(); // Notify the processing thread
                 break;
             }
             std::istringstream iss(line);
@@ -102,26 +112,16 @@ void monitorLogFile(const std::string& logfile_path) {
                 std::cerr << "Error parsing positions in line: " << line << std::endl;
                 continue;
             } else {
-                // Lock the mutex to safely access the queue and push the new positions
-                {
-                    std::lock_guard<std::mutex> lock(queue_mutex);
-
-                    // Push the motor positions to the queue
-                    // setpoint_queue.push(motor_positions.first);
-                    // setpoint_queue.push(motor_positions.second);
-                    update_keypoint(0, positions[0], positions[1]);
-                    
-                    // Log the timestamp and motor positions to the setpoint log file
-                    auto motor_positions = puppet2motor(positions[0], positions[1]);
-                    setpoint_log << timestamp << "," << motor_positions.first << "," << motor_positions.second << std::endl;
-                }
+                // Push the motor positions to the queue
+                update_keypoint(0, positions[0], positions[1]);
                 
-                // Notify the processing thread
-                queue_cv.notify_one();
+                // Log the timestamp and motor positions to the setpoint log file
+                auto motor_positions = puppet2motor(positions[0], positions[1]);
+                setpoint_log << timestamp << "," << motor_positions.first << "," << motor_positions.second << std::endl;
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Check every 10ms (40Hz)
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 40Hz
     }
 
     // Close the log files
@@ -147,45 +147,25 @@ void monitorLogFile(const std::string& logfile_path) {
 
 // Function to push setpoints to the actuators
 void processSetpoints() {
-    while (true) {
-        // Lock the mutex and wait until the keypoint_states is not empty or done is true
-        std::unique_lock<std::mutex> lock(queue_mutex);
-        queue_cv.wait(lock, [] { return !keypoint_states.empty() || done; });
-
-        if (done) {
-            break; // Exit the loop if done is true and the keypoint_states is empty
-        }
-
-        // Create a local copy of the keypoint states
-        std::unordered_map<int, std::vector<Point>> local_keypoint_states;
-
-        // Copy the keypoint states to the local variable
+    while (!done) {
+        // Process each keypoint state
         for (const auto& [id, state] : keypoint_states) {
-            local_keypoint_states[id] = std::vector<Point>(state.buffer.begin(), state.buffer.end());
-        }
+            // Lock-free read of the latest point
+            Point latest_point = state.get_latest();
 
-        lock.unlock(); // Unlock the mutex
+            // Transform the XY coordinates to motor positions
+            auto motor_positions = puppet2motor(latest_point.x, latest_point.y);
 
-        // Process the local copy of the keypoint states
-        for (const auto& [id, points] : local_keypoint_states) {
-            // Check if the buffer is not empty
-            if (!points.empty()) {
-                // Get the latest x and y values from the local copy of the circular buffer
-                const Point& latest_point = points.back();
-                float latest_x = latest_point.x;
-                float latest_y = latest_point.y;
+            // // Set motor positions
+            // leftMotor.setMotorPos(motor_positions.first);
+            // rightMotor.setMotorPos(motor_positions.second);
 
-                // Move the actuator to the new position
-                auto motor_positions = puppet2motor(latest_x, latest_y);
-                leftMotor.setMotorPos(motor_positions.first);
-                rightMotor.setMotorPos(motor_positions.second);
-
-                MyActuator::startMotion();
-
-                // // Simulate actuator movement
-                // std::cout << "id: " << id << ", a1: " << motor_positions.first << ", a2: " << motor_positions.second << std::endl;
-                // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
+            // // Start motor motion
+            // MyActuator::startMotion();
+            
+            // Simulate actuator movement
+            std::cout << "id: " << id << ", a1: " << motor_positions.first << ", a2: " << motor_positions.second << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 }
@@ -209,9 +189,7 @@ std::pair<float, float> puppet2motor(float X, float Y) {
 // Update the keypoint state with new position
 void update_keypoint(int id, float x, float y) {
     auto& state = keypoint_states[id];
-    state.buffer.push_back({x, y});
-    state.latest_x.store(x, std::memory_order_relaxed);
-    state.latest_y.store(y, std::memory_order_relaxed);
+    state.push_back({x, y});  // Lock-free write
 }
 
 int main() {
@@ -219,19 +197,18 @@ int main() {
     std::string logfile_path = "c:\\Users\\tighe\\uirobot-fw\\cloudgate\\setpoints_xy.csv";
 
     // Set the initial positions of the motors
-    leftMotor.setXpos(-0.96);  // meters
-    leftMotor.setYpos(1.56);  // meters
+    leftMotor.setXpos(-0.96);  // m
+    leftMotor.setYpos(1.56);  // m
     leftMotor.setD0(sqrt(pow(leftMotor.getXpos(), 2.0) + pow(leftMotor.getYpos(), 2.0)) * cpm);
-    std::cout << "leftMotor D0: " << leftMotor.getD0() << std::endl;
-    rightMotor.setXpos(1.03);
-    rightMotor.setYpos(1.56);
+    // std::cout << "leftMotor D0: " << leftMotor.getD0() << std::endl;
+    rightMotor.setXpos(1.03);  // m
+    rightMotor.setYpos(1.56);  // m
     rightMotor.setD0(sqrt(pow(rightMotor.getXpos(), 2.0) + pow(rightMotor.getYpos(), 2.0)) * cpm);
-    std::cout << "rightMotor D0: " << rightMotor.getD0() << std::endl;
+    // std::cout << "rightMotor D0: " << rightMotor.getD0() << std::endl;
 
-    // Connect to the gateway and configure the motors
-    MyActuator::connectGateway();
-    MyActuator::configureMotors();
-
+    // // Connect to the gateway and configure the motors
+    // MyActuator::connectGateway();
+    // MyActuator::configureMotors();
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     // Start the monitoring and processing threads
