@@ -6,21 +6,39 @@
     {
         "label": "Build UirSDK3Demo",
         "type": "shell",
-        "command": "g++",
-        "args": [
-            "-g",
-            "-D_WINDOWS",  // Required for proper macro definition
-            "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo.cpp",
-            "-o",
-            "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo",
-            "-I",
-            "${workspaceFolder}/uirSDKfiles",
-            "-L",
-            "${workspaceFolder}/UirSdkLib",
-            "-l",
-            "libUirSdkWin64",
-            "-mconsole" // Specify console application
-        ],
+        "windows": {
+            "command": "g++",
+            "args": [
+                "-g",
+                "-D_WINDOWS",  // Required for proper macro definition
+                "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo.cpp",
+                "-o",
+                "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo",
+                "-I",
+                "${workspaceFolder}/uirSDKfiles",
+                "-L",
+                "${workspaceFolder}/UirSdkLib",
+                "-l",
+                "libUirSdkWin64",
+                "-mconsole" // Specify console application
+            ],
+        },
+        "linux": {
+            "command": "g++",
+            "args": [
+                "-g",
+                "-D_LINUX",  // Required for proper macro definition
+                "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo.cpp",
+                "-o",
+                "${workspaceFolder}/UirSDK3Demo/UirSDK3Demo",
+                "-I",
+                "${workspaceFolder}/uirSDKfiles",
+                "-L",
+                "${workspaceFolder}/UirSdkLib",
+                "-l",
+                "UirSdk"
+            ],
+        },
         "options": {
             "cwd": "${workspaceFolder}",
         },
@@ -220,5 +238,14 @@
             "isDefault": true
         }
     },
+    {
+        "label": "Check workspace path",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "Workspace folder is: ${workspaceFolder}"
+            ],
+            "problemMatcher": []
+    }
     ]
 }
