@@ -18,7 +18,8 @@ inline constexpr float cpm = 3200 / 0.24;  // counts/m = counts/rev / m/rev
 
 class MyActuator {
 public:
-    MyActuator(int CANid = -1) : CANid(CANid), md{} {
+    // Constructor that accepts a string identifier
+    MyActuator(const std::string& name, int CANid = -1) : CANid(CANid), name(name), md{} {
         md.firstRun = true;
         md.err = 0;
         md.unRxData = 0;
@@ -49,6 +50,8 @@ public:
     void returnToZero();  // Return the motor to zero position
 
     // Getters and setters
+    const std::string& getName() const { return name; }
+
     int getCANid() const { return CANid; }
     void setCANid(int id) { CANid = id; }
 
@@ -63,9 +66,10 @@ public:
     
 private:
     int CANid;
+    std::string name;
     static unsigned int g_GtwyHandle;
     static int MemberQuantity;
-    static std::vector<MyActuator*> instances;  // Vector to keep track of all instances
+    static std::vector<MyActuator*> instances;
 
     struct MotionData {
         bool firstRun;

@@ -46,10 +46,6 @@ void StopWinch(int CANid) {
   // Code to stop the winch on the device
   std::cout << "Stopping winch on device " << CANid << std::endl;
   
-  // // Disable
-  // err = SdkSetStopMxn(g_GtwyHandle, CANid);
-  // if (err != 0) { std::cout << "CANid:" << CANid << "SdkSetStopMxn Fail!\n";}
-  
   // Set the jog mode -> speed 0
   err = SdkSetJogMxn(g_GtwyHandle, CANid, 0);
   if (err != 0) { std::cout << "CANid:" << CANid << "SdkSetJogMxn Stop Fail!\n";}

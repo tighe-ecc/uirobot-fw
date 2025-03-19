@@ -8,6 +8,7 @@ from animate_path import animate_path
 distance = 0.80  # Distance to move up in meters
 speed = 0.2     # Speed in meters per second
 frequency = 40  # Frequency in Hz
+joint_id = 0    # Joint ID to include in the logfile
 
 # Calculate the time to traverse the distance
 time_to_traverse = distance / speed
@@ -28,7 +29,7 @@ setpoints = []
 
 for i in range(len(x)):
     timestamp = (i / frequency)
-    setpoints.append(f'{timestamp},{x[i]},{y[i]}\n')
+    setpoints.append(f'{timestamp},{joint_id},{x[i]},{y[i]}\n')
 
 # Write all setpoints to the logfile at once
 try:

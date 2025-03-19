@@ -29,8 +29,11 @@ struct JointState {
     MyActuator rightMotor;
 
     // Constructor to initialize motors
-    JointState() {
-        // Default initialization
+    JointState()
+        : leftMotor("leftMotor"),  // Initialize leftMotor with a name
+          rightMotor("rightMotor") // Initialize rightMotor with a name
+    {
+        // Additional initialization if needed
     }
 
     // Add a new point to the buffer (lock-free)
@@ -83,45 +86,46 @@ void monitorLogFile(const std::string& logfile_path) {
 
     while (true) {
         auto current_time = std::chrono::steady_clock::now();
-        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count()/1000.0; // Convert to seconds
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count() / 1000.0; // Convert to seconds
 
-        if (elapsed_time > timestamp) {           
-            // Read the next line from the log file 
+        if (elapsed_time > timestamp) {
+            // Read the next line from the log file
             if (!std::getline(logfile, line)) {
-                // If end of file is reached, print a message and exit the loop
-                std::cout << "End of log file reached, exiting monitoring thread." << std::endl;
-                done = true; // Set the flag to true
-                break;
+            // If end of file is reached, print a message and exit the loop
+            std::cout << "End of log file reached, exiting monitoring thread." << std::endl;
+            done = true; // Set the flag to true
+            break;
             }
             std::istringstream iss(line);
 
-            // Parse the line into timestamp and positions
-            if (!(iss >> timestamp >> comma) || comma != ',') {
-                // Handle parsing error
-                std::cerr << "Error parsing line: " << line << std::endl;
-                continue;
+            // Parse the line into timestamp, joint_id, and positions
+            int joint_id;
+            if (!(iss >> timestamp >> comma) || comma != ',' || !(iss >> joint_id >> comma) || comma != ',') {
+            // Handle parsing error
+            std::cerr << "Error parsing line: " << line << std::endl;
+            continue;
             }
 
             positions.clear();
             float position;
             while (iss >> position) {
-                positions.push_back(position);
-                if (iss.peek() == ',') {
-                    iss.ignore();
-                }
+            positions.push_back(position);
+            if (iss.peek() == ',') {
+                iss.ignore();
+            }
             }
 
-            if (positions.empty()) {
-                // Handle parsing error
-                std::cerr << "Error parsing positions in line: " << line << std::endl;
-                continue;
+            if (positions.size() < 2) {
+            // Handle parsing error
+            std::cerr << "Error parsing positions in line: " << line << std::endl;
+            continue;
             } else {
-                // Push the motor positions to the queue
-                update_keypoint(0, positions[0], positions[1]);
-                
-                // Log the timestamp and motor positions to the setpoint log file
-                auto motor_positions = puppet2motor(positions[0], positions[1]);
-                setpoint_log << timestamp << "," << motor_positions.first << "," << motor_positions.second << std::endl;
+            // Push the motor positions to the queue
+            update_keypoint(joint_id, positions[0], positions[1]);
+
+            // Log the timestamp, joint_id, and motor positions to the setpoint log file
+            auto motor_positions = puppet2motor(positions[0], positions[1]);
+            setpoint_log << timestamp << "," << joint_id << "," << motor_positions.first << "," << motor_positions.second << std::endl;
             }
         }
 
@@ -136,9 +140,11 @@ void monitorLogFile(const std::string& logfile_path) {
     
     // Return puppet to zero position
     std::cout << "Returning to zero position." << std::endl;
-    // leftMotor.returnToZero();
-    // rightMotor.returnToZero();
-    // MyActuator::startMotion();
+    // for (const auto& [id, state] : joint_states) {
+    //     state.leftMotor.returnToZero();
+    //     state.rightMotor.returnToZero();
+    // }
+    MyActuator::startMotion();
 
     std::cout << "Waiting for return to zero." << std::endl;
     std::this_thread::sleep_for(std::chrono::seconds(5));
@@ -153,25 +159,28 @@ void monitorLogFile(const std::string& logfile_path) {
 // Function to push setpoints to the actuators
 void processSetpoints() {
     while (!done) {
+
+
         // Process each keypoint state
-        for (const auto& [id, state] : joint_states) {
+        for (auto& [id, state] : joint_states) {
+            std::cout << "Processing joint id: " << id << std::endl;
             // Lock-free read of the latest point
             Point latest_point = state.get_latest();
 
             // Transform the XY coordinates to motor positions
             auto motor_positions = puppet2motor(latest_point.x, latest_point.y);
 
-            // // Set motor positions
-            // leftMotor.setMotorPos(motor_positions.first);
-            // rightMotor.setMotorPos(motor_positions.second);
-
-            // // Start motor motion
-            // MyActuator::startMotion();
+            // Set motor positions
+            state.leftMotor.setMotorPos(motor_positions.first);
+            state.rightMotor.setMotorPos(motor_positions.second);
             
             // Simulate actuator movement
             std::cout << "id: " << id << ", a1: " << motor_positions.first << ", a2: " << motor_positions.second << std::endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
+
+        // // Start actuator motion together
+        // MyActuator::startMotion();
     }
 }
 
@@ -335,7 +344,7 @@ void loadPuppetConfig(const std::string& config_path) {
 // Main function
 int main() {
     // Path to the config file
-    std::string config_path = "c:\\Users\\tighe\\uirobot-fw\\cloudgate\\puppet_config.ini";
+    std::string config_path = "c:\\Users\\tighe\\uirobot-fw\\cloudgate\\config.ini";
 
     // Path to the log file  
     std::string logfile_path = "c:\\Users\\tighe\\uirobot-fw\\cloudgate\\setpoints_xy.csv";
@@ -350,12 +359,12 @@ int main() {
     MyActuator::configureMotors();
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-    // // Start the monitoring and processing threads
-    // std::thread monitor_thread(monitorLogFile, logfile_path);
-    // std::thread process_thread(processSetpoints);
+    // Start the monitoring and processing threads
+    std::thread monitor_thread(monitorLogFile, logfile_path);
+    std::thread process_thread(processSetpoints);
 
-    // monitor_thread.join();
-    // process_thread.join();
+    monitor_thread.join();
+    process_thread.join();
 
     return 0;
 }
