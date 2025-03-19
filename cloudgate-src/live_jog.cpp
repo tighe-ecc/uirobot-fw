@@ -59,8 +59,8 @@ void StopWinch(int CANid) {
 int main() {
   std::cout << "Launching setup.cpp\n";
 
-  int lower_speed = -1600;
-  int raise_speed = 1600;
+  int lower_speed = -6400;
+  int raise_speed = 6400;
 
   // Set the current configuration type
   bool m_bIs232Gtwy =  true;

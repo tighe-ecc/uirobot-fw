@@ -5,12 +5,12 @@ from matplotlib.widgets import Button
 
 def animate_path(x, y, frequency):
     # Calculate the extents of the plot
-    x_min, x_max = np.min(x), np.max(x)
-    y_min, y_max = np.min(y), np.max(y)
+    x_min, x_max = -2.97, 2.97
+    y_min, y_max = 0, 4.72
     x_range = x_max - x_min
     y_range = y_max - y_min
-    x_margin = 0.2 * x_range
-    y_margin = 0.2 * y_range
+    x_margin = 0.05 * x_range
+    y_margin = 0.05 * y_range
 
     # Animate the path
     fig, ax = plt.subplots()
@@ -18,6 +18,11 @@ def animate_path(x, y, frequency):
     ax.set_ylim(y_min - y_margin, y_max + y_margin)
     ax.grid(True)  # Add gridlines
     ax.set_aspect('equal')  # Make the grid square
+
+    # Add a green box to show the x_range and y_range
+    rect = plt.Rectangle((x_min, y_min), x_range, y_range, 
+                         linewidth=2, edgecolor='green', facecolor='none')
+    ax.add_patch(rect)
 
     line, = ax.plot([], [], 'b-')
     dot, = ax.plot([], [], 'bo')  # Add a red dot
