@@ -247,8 +247,6 @@
             "${workspaceFolder}/cloudgate-src/puppet_demo.cpp",
             "${workspaceFolder}/cloudgate-src/motor_actuator.cpp",
             "-o","${workspaceFolder}/cloudgate/puppet_demo",
-            "-I","C:/boost/include/boost-1_87",  // Include path for Boost
-            "-I","C:/Libraries/inipp/inipp",  // Include path for inipp headers
             "-I","${workspaceFolder}/uirSDKfiles",  // Include path for UirSDK
             "-L","${workspaceFolder}/UirSdkLib",  // Library path for UirSDK
             "-l","libUirSdkWin64",  // Link UirSDK library
