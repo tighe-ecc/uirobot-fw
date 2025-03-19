@@ -30,8 +30,8 @@ void JogWinch(int CANid, int speed) {
   std::cout << "Jogging winch on device " << CANid << std::endl;
 
   // Set the jog mode -> speed -2 rps
-  err = SdkSetJogMxn(g_GtwyHandle, CANid, speed,  &RxVelo);
-  if (err != 0) { std::cout << "CANid:" << CANid << "SdkSetJogMxn Fail!\n";}
+  err = SdkSetJogMxn(g_GtwyHandle, CANid, speed);
+  if (err != 0) { std::cout << "CANid:" << CANid << "SdkSetJogMxn Move Fail!\n";}
 
   err = SdkSetBeginMxn(g_GtwyHandle, CANid);
   if (err != 0) { std::cout << "CANid:" << CANid << "SdkSetBeginMxn Fail!\n";}
@@ -46,9 +46,16 @@ void StopWinch(int CANid) {
   // Code to stop the winch on the device
   std::cout << "Stopping winch on device " << CANid << std::endl;
   
-  // Disable
-  err = SdkSetStopMxn(g_GtwyHandle, CANid);
-  if (err != 0) { std::cout << "CANid:" << CANid << "SdkSetMotorOn Fail!\n";}
+  // // Disable
+  // err = SdkSetStopMxn(g_GtwyHandle, CANid);
+  // if (err != 0) { std::cout << "CANid:" << CANid << "SdkSetStopMxn Fail!\n";}
+  
+  // Set the jog mode -> speed 0
+  err = SdkSetJogMxn(g_GtwyHandle, CANid, 0);
+  if (err != 0) { std::cout << "CANid:" << CANid << "SdkSetJogMxn Stop Fail!\n";}
+
+  err = SdkSetBeginMxn(g_GtwyHandle, CANid);
+  if (err != 0) { std::cout << "CANid:" << CANid << "SdkSetBeginMxn Fail!\n";}
 }
 
 
@@ -56,8 +63,8 @@ void StopWinch(int CANid) {
 int main() {
   std::cout << "Launching setup.cpp\n";
 
-  int lower_speed = -6400;
-  int raise_speed = 6400;
+  int lower_speed = -1600;
+  int raise_speed = 1600;
 
   // Set the current configuration type
   bool m_bIs232Gtwy =  true;
@@ -130,7 +137,7 @@ int main() {
 
         if (key == 27) { // ESC key
           std::cout << "Disabling motor for CANid " << CANid << std::endl;
-          err = SdkSetMotorOn(g_GtwyHandle, CANid, 0);
+          StopWinch(CANid);
           if (err != 0) {
             std::cout << "CANid:" << CANid << " SdkSetMotorOn (Disable) Fail!\n";
           }

@@ -14,9 +14,11 @@
 #include <chrono>
 #include <algorithm>
 
+inline constexpr float cpm = 3200 / 0.24;  // counts/m = counts/rev / m/rev
+
 class MyActuator {
 public:
-    MyActuator(int CANid) : CANid(CANid), md{} {
+    MyActuator(int CANid = -1) : CANid(CANid), md{} {
         md.firstRun = true;
         md.err = 0;
         md.unRxData = 0;
@@ -42,35 +44,22 @@ public:
     static void closeAllLogFiles();  // Close all open log files
     
     // Instance methods
+    void setGroupID(int groupID); // Set the group ID for a motor
     void setMotorPos(int position);  // Set the target position for the motor
     void returnToZero();  // Return the motor to zero position
 
-    // Getter and Setter for xpos
-    float getXpos() const {
-        return md.xpos;
-    }
+    // Getters and setters
+    int getCANid() const { return CANid; }
+    void setCANid(int id) { CANid = id; }
 
-    void setXpos(float xpos) {
-        md.xpos = xpos;
-    }
-
-    // Getter and Setter for ypos
-    float getYpos() const {
-        return md.ypos;
-    }
-
-    void setYpos(float ypos) {
-        md.ypos = ypos;
-    }
-
-    // Getter and Setter for d0
-    float getD0() const {
-        return md.d0;
-    }
-
-    void setD0(float d0) {
-        md.d0 = d0;
-    }
+    float getXpos() const { return md.xpos; }
+    void setXpos(float xpos) { md.xpos = xpos; }
+    
+    float getYpos() const { return md.ypos; }
+    void setYpos(float ypos) { md.ypos = ypos; }
+    
+    float getD0() const { return md.d0; }
+    void setD0(float d0) { md.d0 = d0; }
     
 private:
     int CANid;

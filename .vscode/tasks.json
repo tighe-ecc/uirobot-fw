@@ -242,18 +242,16 @@
         "args": [
             "-g",
             "-D_WINDOWS",  // Required for proper macro definition
+            "-DRYML_SINGLE_HEADER",  // Define macro for single rapidyaml header
+            "-DC4CORE_SINGLE_HEADER",  // Define macro for single c4core header
             "${workspaceFolder}/cloudgate-src/puppet_demo.cpp",
             "${workspaceFolder}/cloudgate-src/motor_actuator.cpp",
-            "-o",
-            "${workspaceFolder}/cloudgate/puppet_demo",
-            "-I",
-            "${workspaceFolder}/uirSDKfiles",
-            "-I",
-            "C:/boost/include/boost-1_87",  // Corrected include path for Boost
-            "-L",
-            "${workspaceFolder}/UirSdkLib",
-            "-l",
-            "libUirSdkWin64",
+            "-o","${workspaceFolder}/cloudgate/puppet_demo",
+            "-I","C:/boost/include/boost-1_87",  // Include path for Boost
+            "-I","C:/Libraries/inipp/inipp",  // Include path for inipp headers
+            "-I","${workspaceFolder}/uirSDKfiles",  // Include path for UirSDK
+            "-L","${workspaceFolder}/UirSdkLib",  // Library path for UirSDK
+            "-l","libUirSdkWin64",  // Link UirSDK library
             "-mconsole" // Specify console application
         ],
         "options": {

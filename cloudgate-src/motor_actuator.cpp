@@ -63,7 +63,7 @@ void MyActuator::configureMotors()
 
     for (int i = MemberQuantity; i > 0; i--) {
         CANid = Member[i - 1].CANnid;
-        std::cout << "CAN id:" << (int)Member[i - 1].CANnid
+        std::cout << "CANid:" << (int)Member[i - 1].CANnid
                     << "    Model:" << Member[i - 1].Model.ModelStr
                     << "    Firmware:" << Member[i - 1].Model.FirmVer
                     << std::endl;
@@ -100,20 +100,27 @@ void MyActuator::configureMotors()
                 std::cout << "CANid:" << CANid << "    Acceleration and deceleration mode = " << unRxData << "\n";
             }
 
-            // Set acceleration/deceleration rate to that of gravity
+            // Set acceleration/deceleration rate
             err = SdkSetAcceleration(g_GtwyHandle, CANid, 13066, &unRxData);
             if (err) {
-                std::cout << "CANid:" << CANid << "    SdkGetAcceleration Fail!\n";
+                std::cout << "CANid:" << CANid << "    SdkSetAcceleration Fail!\n";
                 return;
             } else {
                 std::cout << "CANid:" << CANid << "    Acceleration rate = " << unRxData << "\n";
             }
-            err = SdkSetDeceleration(g_GtwyHandle, CANid, 130667*10, &unRxData);
+            err = SdkSetDeceleration(g_GtwyHandle, CANid, 130660, &unRxData);
             if (err) {
-                std::cout << "CANid:" << CANid << "    SdkGetAcceleration Fail!\n";
+                std::cout << "CANid:" << CANid << "    SdkSetDeceleration Fail!\n";
                 return;
             } else {
                 std::cout << "CANid:" << CANid << "    Deceleration rate = " << unRxData << "\n";
+            }
+            err = SdkSetStopDeceleration(g_GtwyHandle, CANid, 1306600, &unRxData);
+            if (err) {
+                std::cout << "CANid:" << CANid << "    SdkSetStopDeceleration Fail!\n";
+                return;
+            } else {
+                std::cout << "CANid:" << CANid << "    Stop Deceleration rate = " << unRxData << "\n";
             }
 
             // Information Enable
@@ -170,6 +177,20 @@ void MyActuator::configureMotors()
             err = SdkSetOrigin(g_GtwyHandle, CANid);
             if (err != 0) { std::cout << "CANid:" << CANid << "    SdkSetOrigin Fail!\n"; return; }
         }
+    }
+}
+
+// Set the group ID for a motor
+void MyActuator::setGroupID(int groupID)
+{
+    ERRO err = 0;
+
+    err = SdkSetProtocolPara(g_GtwyHandle, CANid, 8, groupID);
+    if (err) {
+        std::cout << "  CANid:" << CANid << "    SdkSetProtocolPara Fail!\n";
+        return;
+    } else {
+        std::cout << "  CANid:" << CANid << "    GroupID: " << groupID << "\n";
     }
 }
 

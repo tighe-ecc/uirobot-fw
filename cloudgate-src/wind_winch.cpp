@@ -64,7 +64,7 @@ int main() {
   if (m_bIs232Gtwy) {
     //serial device config
     Gtwy.detail.type = UIGW3_GW2513;
-    Gtwy.COMidx = 5;
+    Gtwy.COMidx = 4;
     Gtwy.COMbaud = 57600;
 
   }
@@ -76,7 +76,7 @@ int main() {
     Gtwy.detail.IP[2] = 168;
     Gtwy.detail.IP[3] = 192;
     if ((!Gtwy.tcp.IPaddr)) {
-    std::cout << "Gateway parameter error!\n";
+      std::cout << "Gateway parameter error!\n";
       return -1;
     }
     Gtwy.tcp.IPport = 8888;
@@ -120,5 +120,28 @@ int main() {
       }
   } else {
       std::cout << "Skipping all devices." << std::endl;
+  }
+
+  std::cout << "Do you want to wind the winch on a specific device? (y/n): ";
+  std::cin >> userResponse;
+  if (userResponse == 'y' || userResponse == 'Y') {
+    int CANid;
+    std::cout << "Enter the CANid of the device: ";
+    std::cin >> CANid;
+
+    bool deviceFound = false;
+    for (int i = MemberQuantity; i > 0; i--) {
+      if (Member[i - 1].CANnid == CANid) {
+        deviceFound = true;
+        LowerWinch(CANid);
+        break;
+      }
+    }
+
+    if (!deviceFound) {
+      std::cout << "Device with CANid " << CANid << " not found.\n";
+    }
+  } else {
+    std::cout << "Skipping all devices." << std::endl;
   }
 }
