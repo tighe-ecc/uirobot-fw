@@ -5,7 +5,7 @@ import glob
 # Read the CSV files
 df_setpoint = pd.read_csv('utils/setpoint_log.csv')
 setpoint_time = df_setpoint.iloc[:, 0]
-setpoint_position = df_setpoint.iloc[:, 1:]
+setpoint_position = df_setpoint.iloc[:, 2:]
 
 # Find all position_log* files
 position_files = glob.glob('utils/position_log*.csv')

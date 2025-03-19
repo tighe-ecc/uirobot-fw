@@ -20,18 +20,21 @@ struct Point {
 
 // Define a structure to hold the buffered keypoint state
 struct JointState {
-    static constexpr size_t BUFFER_SIZE = 10; // Fixed buffer size
-    std::array<Point, BUFFER_SIZE> buffer;    // Fixed-size circular buffer
-    std::atomic<size_t> write_index{0};       // Index for writing
-    std::atomic<size_t> read_index{0};        // Index for reading
+    static constexpr size_t BUFFER_SIZE = 10;   // Fixed buffer size
+    std::array<Point, BUFFER_SIZE> buffer;      // Fixed-size circular buffer
+    std::atomic<size_t> write_index{0};         // Index for writing
+    std::atomic<size_t> read_index{0};          // Index for reading (not used)
 
-    MyActuator leftMotor;
-    MyActuator rightMotor;
+    std::array<float, 2> home;                  // Home position [x, y]
 
-    // Constructor to initialize motors
+    MyActuator leftMotor;                       // Left motor actuator
+    MyActuator rightMotor;                      // Right motor actuator
+
+    // Constructor to initialize motors and home position
     JointState()
         : leftMotor("leftMotor"),  // Initialize leftMotor with a name
-          rightMotor("rightMotor") // Initialize rightMotor with a name
+          rightMotor("rightMotor"), // Initialize rightMotor with a name
+          home{0.0f, 0.0f}          // Default home position (0, 0)
     {
         // Additional initialization if needed
     }
@@ -56,7 +59,7 @@ std::atomic<bool> done(false);
 
 
 // Function prototypes
-std::pair<float, float> puppet2motor(float X, float Y);
+std::pair<float, float> puppet2motor(float X, float Y, const JointState& joint);
 void update_keypoint(int id, float x, float y);
 void loadPuppetConfig(const std::string& config_path);
 
@@ -124,34 +127,18 @@ void monitorLogFile(const std::string& logfile_path) {
             update_keypoint(joint_id, positions[0], positions[1]);
 
             // Log the timestamp, joint_id, and motor positions to the setpoint log file
-            auto motor_positions = puppet2motor(positions[0], positions[1]);
+            auto motor_positions = puppet2motor(positions[0], positions[1], joint_states[joint_id]);
             setpoint_log << timestamp << "," << joint_id << "," << motor_positions.first << "," << motor_positions.second << std::endl;
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 40Hz
+        std::this_thread::sleep_for(std::chrono::milliseconds(25)); // 40Hz
     }
 
     // Close the log files
     std::cout << "Closing log files." << std::endl;
     logfile.close();
     setpoint_log.close();
-    MyActuator::closeAllLogFiles();
-    
-    // Return puppet to zero position
-    std::cout << "Returning to zero position." << std::endl;
-    // for (const auto& [id, state] : joint_states) {
-    //     state.leftMotor.returnToZero();
-    //     state.rightMotor.returnToZero();
-    // }
-    MyActuator::startMotion();
-
-    std::cout << "Waiting for return to zero." << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-    
-    // Disable the motors and terminate the program
-    std::cout << "Disabling motors." << std::endl;
-    MyActuator::disableMotors();
     return;
 }
 
@@ -159,8 +146,6 @@ void monitorLogFile(const std::string& logfile_path) {
 // Function to push setpoints to the actuators
 void processSetpoints() {
     while (!done) {
-
-
         // Process each keypoint state
         for (auto& [id, state] : joint_states) {
             std::cout << "Processing joint id: " << id << std::endl;
@@ -168,38 +153,60 @@ void processSetpoints() {
             Point latest_point = state.get_latest();
 
             // Transform the XY coordinates to motor positions
-            auto motor_positions = puppet2motor(latest_point.x, latest_point.y);
+            auto motor_positions = puppet2motor(latest_point.x, latest_point.y, state);
 
             // Set motor positions
             state.leftMotor.setMotorPos(motor_positions.first);
+            int leftVel = state.leftMotor.getLastVelocity();
             state.rightMotor.setMotorPos(motor_positions.second);
+            int rightVel = state.rightMotor.getLastVelocity();
             
             // Simulate actuator movement
             std::cout << "id: " << id << ", a1: " << motor_positions.first << ", a2: " << motor_positions.second << std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
+            std::cout << "id: " << id << ", leftVel: " << leftVel << ", rightVel: " << rightVel << std::endl;
+            std::cout << std::endl;
+            // std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        // // Start actuator motion together
-        // MyActuator::startMotion();
+            // Start the motion
+            MyActuator::startMotion();
+        }
+        
+        std::cout << std::endl;
     }
+    
+    // Return puppet to zero position
+    std::cout << "Returning to zero position." << std::endl;
+    for (auto& [id, state] : joint_states) {
+        state.leftMotor.returnToZero();
+        state.rightMotor.returnToZero();
+    }
+    MyActuator::startMotion();
+    
+    std::cout << "Waiting for return to zero." << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+
+    MyActuator::closeAllLogFiles();
+    
+    // Disable the motors and terminate the program
+    std::cout << "Disabling motors." << std::endl;
+    MyActuator::disableMotors();
 }
 
 
 // Transform the XY coordinates in meters to actuator positions in counts
-std::pair<float, float> puppet2motor(float X, float Y) {
-    // // Calculate distance from motor to target position, subtract d0, convert to counts
-    // float a1 = -sqrt(
-    //     pow((X - leftMotor.getXpos()), 2.0) + 
-    //     pow((Y - leftMotor.getYpos()), 2.0)
-    // ) * cpm + leftMotor.getD0();  // counts
+std::pair<float, float> puppet2motor(float X, float Y, const JointState& joint) {
+    // Calculate distance from motor to target position, subtract d0, convert to counts
+    float a1 = -sqrt(
+        pow(((X - joint.home[0]) - joint.leftMotor.getXpos()), 2.0) + 
+        pow(((Y - joint.home[1]) - joint.leftMotor.getYpos()), 2.0)
+    ) * cpm + joint.leftMotor.getD0();  // counts
 
-    // float a2 = -sqrt(
-    //     pow((X - rightMotor.getXpos()), 2.0) + 
-    //     pow((Y - rightMotor.getYpos()), 2.0)
-    // ) * cpm + rightMotor.getD0();  // counts
+    float a2 = -sqrt(
+        pow(((X - joint.home[0]) - joint.rightMotor.getXpos()), 2.0) + 
+        pow(((Y - joint.home[1]) - joint.rightMotor.getYpos()), 2.0)
+    ) * cpm + joint.rightMotor.getD0();  // counts
 
-    // return std::make_pair(a1, a2);
-    return std::make_pair(X, Y); // Placeholder for actual transformation
+    return std::make_pair(a1, a2);
 }
 
 
@@ -292,8 +299,12 @@ void loadPuppetConfig(const std::string& config_path) {
                                 try {
                                     float home_x = std::stof(home_str.substr(0, comma_pos));
                                     float home_y = std::stof(home_str.substr(comma_pos + 1));
-                                    // Store home position in the joint state or use it as needed
-                                    joint_state.push_back({home_x, home_y});
+                                    // Store home position in the home tuple of joint state
+                                    joint_state.home = {home_x, home_y};
+                                    // Populate the buffer with the home position
+                                    for (size_t i = 0; i < JointState::BUFFER_SIZE; ++i) {
+                                        joint_state.buffer[i] = {home_x, home_y};
+                                    }
                                     std::cout << "  Home position: (" << home_x << ", " << home_y << ")" << std::endl;
                                 } catch (const std::exception& e) {
                                     std::cerr << "Error parsing home position for joint " << joint_id 

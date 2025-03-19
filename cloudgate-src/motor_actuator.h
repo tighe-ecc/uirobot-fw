@@ -63,6 +63,8 @@ public:
     
     float getD0() const { return md.d0; }
     void setD0(float d0) { md.d0 = d0; }
+
+    int getLastVelocity() const { return md.lastVelocity; }
     
 private:
     int CANid;
