@@ -64,7 +64,7 @@ int main() {
   if (m_bIs232Gtwy) {
     //serial device config
     Gtwy.detail.type = UIGW3_GW2513;
-    Gtwy.COMidx = 4;
+    Gtwy.COMidx = 5;
     Gtwy.COMbaud = 57600;
 
   }

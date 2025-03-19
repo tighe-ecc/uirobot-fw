@@ -80,6 +80,35 @@
         }
     },
     {
+        "label": "Build live jog",
+        "type": "shell",
+        "command": "g++",
+        "args": [
+            "-g",
+            "-D_WINDOWS",  // Required for proper macro definition
+            "${workspaceFolder}/cloudgate-src/live_jog.cpp",
+            "-o",
+            "${workspaceFolder}/cloudgate/live_jog",
+            "-I",
+            "${workspaceFolder}/uirSDKfiles",
+            "-L",
+            "${workspaceFolder}/UirSdkLib",
+            "-l",
+            "libUirSdkWin64",
+            "-mconsole" // Specify console application
+        ],
+        "options": {
+            "cwd": "${workspaceFolder}",
+        },
+        "problemMatcher": [
+            "$gcc"
+        ],
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        }
+    },
+    {
         "label": "Build wind winch",
         "type": "shell",
         "command": "g++",

@@ -53,7 +53,7 @@ void LowerWinch(int CANid) {
   err = SdkSetBeginMxn(g_GtwyHandle, CANid);
   if (err != 0) { std::cout << "CAN-ID:" << CANid << "SdkSetBeginMxn Fail!\n";}
 
-  Sleep(2000);
+  Sleep(5000);
 
   // Set the jog mode -> speed 0
   err = SdkSetJogMxn(g_GtwyHandle, CANid, 0, &RxVelo);
