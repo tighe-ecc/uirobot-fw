@@ -79,7 +79,7 @@ void MyActuator::configureMotors()
                 std::cout << "CANid:" << CANid << "    SdkGetInitialConfig Fail!\n";
                 return;
             } else {
-                std::cout << "CANid:" << CANid << "    Power-on Enable = " << unRxData << "\n";
+                // std::cout << "CANid:" << CANid << "    Power-on Enable = " << unRxData << "\n";
             }
 
             // Get positive turn setting, 0 = CW, 1= CCW
@@ -88,7 +88,7 @@ void MyActuator::configureMotors()
                 std::cout << "CANid:" << CANid << "    SdkGetInitialConfig Fail!\n";
                 return;
             } else {
-                std::cout << "CANid:" << CANid << "    Positive turn setting = " << unRxData << "\n";
+                // std::cout << "CANid:" << CANid << "    Positive turn setting = " << unRxData << "\n";
             }
 
             // Acceleration and deceleration mode 0 = value, 1 = time
@@ -97,7 +97,7 @@ void MyActuator::configureMotors()
                 std::cout << "CANid:" << CANid << "    SdkSetInitialConfig Fail!\n";
                 return;
             } else {
-                std::cout << "CANid:" << CANid << "    Acceleration and deceleration mode = " << unRxData << "\n";
+                // std::cout << "CANid:" << CANid << "    Acceleration and deceleration mode = " << unRxData << "\n";
             }
 
             // Set acceleration/deceleration rate
@@ -106,21 +106,21 @@ void MyActuator::configureMotors()
                 std::cout << "CANid:" << CANid << "    SdkSetAcceleration Fail!\n";
                 return;
             } else {
-                std::cout << "CANid:" << CANid << "    Acceleration rate = " << unRxData << "\n";
+                // std::cout << "CANid:" << CANid << "    Acceleration rate = " << unRxData << "\n";
             }
             err = SdkSetDeceleration(g_GtwyHandle, CANid, 130660, &unRxData);
             if (err) {
                 std::cout << "CANid:" << CANid << "    SdkSetDeceleration Fail!\n";
                 return;
             } else {
-                std::cout << "CANid:" << CANid << "    Deceleration rate = " << unRxData << "\n";
+                // std::cout << "CANid:" << CANid << "    Deceleration rate = " << unRxData << "\n";
             }
             err = SdkSetStopDeceleration(g_GtwyHandle, CANid, 1306600, &unRxData);
             if (err) {
                 std::cout << "CANid:" << CANid << "    SdkSetStopDeceleration Fail!\n";
                 return;
             } else {
-                std::cout << "CANid:" << CANid << "    Stop Deceleration rate = " << unRxData << "\n";
+                // std::cout << "CANid:" << CANid << "    Stop Deceleration rate = " << unRxData << "\n";
             }
 
             // Information Enable
@@ -206,7 +206,7 @@ void MyActuator::setMotorPos(int position)
     // Record the time elapsed since the last iteration
     auto currentTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - md.lastTime).count();
-    std::cout << "Elapsed time: " << elapsedTime << " ms, CANid: " << CANid << std::endl;
+    // std::cout << "Elapsed time: " << elapsedTime << " ms, CANid: " << CANid << std::endl;
     md.lastTime = currentTime;
 
     // Create a new log file if this is the first run
@@ -239,7 +239,7 @@ void MyActuator::setMotorPos(int position)
 
     if (bJog) {
         // PID controller parameters
-        float Kp = 4.0f;  // Proportional gain
+        float Kp = 3.0f;  // Proportional gain
         float Ki = 0.0f;  // Integral gain
         float Kd = 0.0f;  // Derivative gain
 
@@ -247,7 +247,7 @@ void MyActuator::setMotorPos(int position)
         // static float integralError = 0;
         md.integralError += positionError * elapsedTime / 1000.0;
         if (Ki * md.integralError > setpointVelocity) {
-            std::cout << "Integral error is too high, limiting to 160000\n";
+            std::cout << "CANid:" << CANid << "Integral error is too high, limiting to 160000\n";
             md.integralError = setpointVelocity / Ki;
         }
 
@@ -259,7 +259,7 @@ void MyActuator::setMotorPos(int position)
         // Calculate the control output
         setpointVelocity = static_cast<int>(Kp * positionError + Ki * md.integralError + Kd * derivativeError);
         if (std::abs(setpointVelocity) > velLimit) {
-            std::cout << "Setpoint velocity is too high, limiting to 160000\n";
+            std::cout << "CANid:" << CANid << "Setpoint velocity is too high, limiting to 160000\n";
             setpointVelocity = (setpointVelocity > 0) ? velLimit : -velLimit;
         }
 
@@ -267,15 +267,15 @@ void MyActuator::setMotorPos(int position)
         static const int maxAcceleration = 131; // Maximum change in velocity per millisecond, ~9.8m/s^2
         int velocityChange = setpointVelocity - md.lastVelocity;
         if (std::abs(velocityChange) > maxAcceleration * updateRate) {
-            std::cout << "Acceleration limit exceeded, limiting velocity change\n";
+            std::cout << "CANid:" << CANid << "Acceleration limit exceeded, limiting velocity change\n";
             setpointVelocity = md.lastVelocity + ((velocityChange > 0) ? maxAcceleration * updateRate : -maxAcceleration * updateRate);
         }
         md.lastVelocity = setpointVelocity;
 
-        std::cout << "PosErr: " << positionError 
-                  << " IntErr: " << md.integralError
-                  << " DerErr: " << derivativeError 
-                  << " SetVel: " << setpointVelocity << std::endl;
+        // std::cout << "PosErr: " << positionError 
+        //           << " IntErr: " << md.integralError
+        //           << " DerErr: " << derivativeError 
+        //           << " SetVel: " << setpointVelocity << std::endl;
         
         // Update the target motor velocity
         md.err = SdkSetJogMxn(g_GtwyHandle, CANid, setpointVelocity);
@@ -313,12 +313,12 @@ void MyActuator::setMotorPos(int position)
 // Return all motors to zero position
 void MyActuator::returnToZero()
 {
-    std::cout << "Returning all motors to zero position...\n";
+    // std::cout << "Returning all motors to zero position...\n";
     ERRO err = 0;
     unint unRxData = 0;
 
     //  Update the target motor position and velocity
-    err = SdkSetPtpMxnA(g_GtwyHandle, CANid, 3200, 0);
+    err = SdkSetPtpMxnA(g_GtwyHandle, CANid, 6400, 0);
     if (err != 0) {
         std::cout << "CANid:" << CANid << "    SdkSetPtpMxnA Fail!\n";
         return;

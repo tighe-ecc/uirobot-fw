@@ -5,10 +5,11 @@ import os
 from animate_path import animate_path
 
 # Inputs
-height = 0.5  # Height of the plus shape in meters
-width = 0.8   # Width of the plus shape in meters
-speed = 0.6  # Speed in meters per second
+height = 2.0  # Height of the plus shape in meters
+width = 1.0   # Width of the plus shape in meters
+speed = 1.0  # Speed in meters per second
 frequency = 40  # Frequency in Hz
+joint_id = 3    # Joint ID to include in the logfile
 
 # Calculate the time to traverse the height and width
 time_to_traverse_height = height / speed
@@ -44,7 +45,7 @@ setpoints = []
 
 for i in range(len(x)):
     timestamp = (i / frequency)
-    setpoints.append(f'{timestamp},{x[i]},{y[i]}\n')
+    setpoints.append(f'{timestamp},{joint_id},{x[i]},{y[i]}\n')
 
 # Write all setpoints to the logfile at once
 try:

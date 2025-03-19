@@ -12,6 +12,8 @@
 #include <array>
 #include <atomic>
 
+const bool debug = false;  // Enable debug mode
+
 // Define a structure to hold a joint position
 struct Point {
     float x;
@@ -148,7 +150,8 @@ void processSetpoints() {
     while (!done) {
         // Process each keypoint state
         for (auto& [id, state] : joint_states) {
-            std::cout << "Processing joint id: " << id << std::endl;
+            if (debug) { std::cout << "Processing joint id: " << id << std::endl; }
+            
             // Lock-free read of the latest point
             Point latest_point = state.get_latest();
 
@@ -161,17 +164,19 @@ void processSetpoints() {
             state.rightMotor.setMotorPos(motor_positions.second);
             int rightVel = state.rightMotor.getLastVelocity();
             
-            // Simulate actuator movement
-            std::cout << "id: " << id << ", a1: " << motor_positions.first << ", a2: " << motor_positions.second << std::endl;
-            std::cout << "id: " << id << ", leftVel: " << leftVel << ", rightVel: " << rightVel << std::endl;
-            std::cout << std::endl;
-            // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            if (debug) {
+                // Simulate actuator movement
+                std::cout << "id: " << id << ", a1: " << motor_positions.first << ", a2: " << motor_positions.second << std::endl;
+                std::cout << "id: " << id << ", leftVel: " << leftVel << ", rightVel: " << rightVel << std::endl;
+                std::cout << std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
 
             // Start the motion
             MyActuator::startMotion();
         }
         
-        std::cout << std::endl;
+        if (debug) { std::cout << std::endl; }
     }
     
     // Return puppet to zero position
