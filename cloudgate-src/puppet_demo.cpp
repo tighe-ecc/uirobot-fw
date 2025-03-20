@@ -395,7 +395,9 @@ void oscResponder(float x1, float y1, float x2, float y2, float x3, float y3, fl
     //     update_keypoint(i, coordinates[i][0], coordinates[i][1]);
     // }
 
+    update_keypoint(0, x1, y1);
     update_keypoint(3, x4, y4);
+    update_keypoint(6, x7, y7);
 }
 
 
