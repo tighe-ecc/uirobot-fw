@@ -1,6 +1,6 @@
 {
     // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format  
+    // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
     {
@@ -271,6 +271,41 @@
                 "Workspace folder is: ${workspaceFolder}"
             ],
             "problemMatcher": []
+    },
+    {
+        "label": "Build puppet demo MSVC",
+        "type": "shell",
+        "command": "cl.exe",
+        "args": [
+            "/EHsc",               // Enable C++ exception handling
+            "/Zi",                 // Generate debug info (equivalent to -g)
+            "/std:c++17",         // Use C++17 standard
+            "/D_WINDOWS",          // Windows macro definition
+            "/DRYML_SINGLE_HEADER",    // rapidyaml macro
+            "/DC4CORE_SINGLE_HEADER",  // c4core macro
+            "${workspaceFolder}/cloudgate-src/puppet_demo.cpp",
+            "${workspaceFolder}/cloudgate-src/motor_actuator.cpp",
+            "/Fe:${workspaceFolder}/cloudgate/puppet_demo.exe",  // Output executable
+            "/I", "C:/boost/include/boost-1_87",     // Boost include
+            "/I", "C:/Libraries/inipp/inipp",        // inipp include
+            "/I", "${workspaceFolder}/uirSDKfiles",  // UirSDK include
+            "/link",
+            "/LIBPATH:${workspaceFolder}/UirSdkLib",
+            "libUirSdkWin64.lib"                     // Link with UirSDK
+        ],
+        "options": {
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "Path": "${env:Path};C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.xx.xxxx\\bin\\Hostx64\\x64"
+            }
+        },
+        "problemMatcher": [
+            "$msCompile"
+        ],
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        }
     }
     ]
 }

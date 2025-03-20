@@ -29,3 +29,6 @@ Thumbs.db
 # Ignore IDE/editor specific files
 .vscode/settings.json
 .idea/
+
+*.obj
+*.pdb
