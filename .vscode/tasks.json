@@ -244,12 +244,22 @@
             "-D_WINDOWS",  // Required for proper macro definition
             "-DRYML_SINGLE_HEADER",  // Define macro for single rapidyaml header
             "-DC4CORE_SINGLE_HEADER",  // Define macro for single c4core header
+            
+            "${workspaceFolder}/cloudgate-src/oscpack/osc/OscTypes.cpp",
+            "${workspaceFolder}/cloudgate-src/oscpack/osc/OscReceivedElements.cpp",
+            "${workspaceFolder}/cloudgate-src/oscpack/osc/OscPrintReceivedElements.cpp",
+            "${workspaceFolder}/cloudgate-src/oscpack/ip/IpEndpointName.cpp",
+            "${workspaceFolder}/cloudgate-src/oscpack/ip/win32/NetworkingUtils.cpp",
+            "${workspaceFolder}/cloudgate-src/oscpack/ip/win32/UdpSocket.cpp",
+
             "${workspaceFolder}/cloudgate-src/puppet_demo.cpp",
             "${workspaceFolder}/cloudgate-src/motor_actuator.cpp",
             "-o","${workspaceFolder}/cloudgate/puppet_demo",
             "-I","${workspaceFolder}/uirSDKfiles",  // Include path for UirSDK
             "-L","${workspaceFolder}/UirSdkLib",  // Library path for UirSDK
             "-l","libUirSdkWin64",  // Link UirSDK library
+            "-l", "ws2_32",  // Link ws2_32 library
+            "-l", "winmm",   // Link winmm library
             "-mconsole" // Specify console application
         ],
         "options": {
@@ -279,10 +289,8 @@
         "args": [
             "/EHsc",               // Enable C++ exception handling
             "/Zi",                 // Generate debug info (equivalent to -g)
-            "/std:c++17",         // Use C++17 standard
+            "/std:c++17",          // Use C++17 standard
             "/D_WINDOWS",          // Windows macro definition
-            "/DRYML_SINGLE_HEADER",    // rapidyaml macro
-            "/DC4CORE_SINGLE_HEADER",  // c4core macro
 
             // oscpack source files
             "${workspaceFolder}/cloudgate-src/oscpack/osc/OscTypes.cpp",

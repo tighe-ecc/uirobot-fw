@@ -37,6 +37,7 @@
 #ifndef INCLUDED_OSCPACK_OSCTYPES_H
 #define INCLUDED_OSCPACK_OSCTYPES_H
 
+#include <cstdint>
 
 namespace osc{
 
@@ -49,8 +50,8 @@ typedef unsigned __int64 uint64;
 
 #elif defined(__x86_64__) || defined(_M_X64)
 
-typedef long int64;
-typedef unsigned long uint64;
+typedef int64_t int64;
+typedef uint64_t uint64;
 
 #else
 
@@ -63,8 +64,8 @@ typedef unsigned long long uint64;
 
 #if defined(__x86_64__) || defined(_M_X64)
 
-typedef signed int int32;
-typedef unsigned int uint32;
+typedef int32_t int32;
+typedef uint32_t uint32;
 
 #else
 

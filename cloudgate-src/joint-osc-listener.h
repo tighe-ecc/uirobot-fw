@@ -6,8 +6,8 @@
 
 class JointListener: public osc::OscPacketListener  {
     public:
-    // TODO: Reference to circular buffer.
-
+        void (*callback)(float, float, float, float, float, float, float, float, float, float, float, float, float, float);
+    
     virtual void ProcessMessage(const osc::ReceivedMessage& m,
         const IpEndpointName& remoteEndpoint ) {
             (void) remoteEndpoint;
@@ -30,15 +30,19 @@ class JointListener: public osc::OscPacketListener  {
                 >> x7 >> y7
                 >> osc::EndMessage;
 
-            std::cout << m.AddressPattern()
-                << " [" << x1 << ", " << y1 << "],"
-                << "[" << x2 << ", " << y2 << "],"
-                << "[" << x3 << ", " << y3 << "],"
-                << "[" << x4 << ", " << y4 << "],"
-                << "[" << x5 << ", " << y5 << "],"
-                << "[" << x6 << ", " << y6 << "],"
-                << "[" << x7 << ", " << y7 << "]"
-                << std::endl;
+
+            // Call the callback function with the received coordinates
+            callback(x1, y1, x2, y2, x3, y3, x4, y4, x5, y5, x6, y6, x7, y7);
+
+            // std::cout << m.AddressPattern()
+            //     << " [" << x1 << ", " << y1 << "],"
+            //     << "[" << x2 << ", " << y2 << "],"
+            //     << "[" << x3 << ", " << y3 << "],"
+            //     << "[" << x4 << ", " << y4 << "],"
+            //     << "[" << x5 << ", " << y5 << "],"
+            //     << "[" << x6 << ", " << y6 << "],"
+            //     << "[" << x7 << ", " << y7 << "]"
+            //     << std::endl;
 
             // TODO: Write the motor positions to the queue.
             // This will require a refactoring of puppet_demo.cpp

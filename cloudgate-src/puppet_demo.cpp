@@ -1,4 +1,5 @@
 #include "motor_actuator.h"
+#include "joint-osc-listener.h"
 
 #include "inipp.h"
 #include <iostream>
@@ -11,6 +12,9 @@
 #include <map>
 #include <array>
 #include <atomic>
+
+#define ADDRESS "0.0.0.0"
+#define PORT 7600
 
 const bool debug = false;  // Enable debug mode
 
@@ -154,6 +158,10 @@ void processSetpoints() {
             
             // Lock-free read of the latest point
             Point latest_point = state.get_latest();
+
+            if (debug) {
+                std::cout << "id: " << id << ", x: " << latest_point.x << ", y: " << latest_point.y << std::endl;
+            }
 
             // Transform the XY coordinates to motor positions
             auto motor_positions = puppet2motor(latest_point.x, latest_point.y, state);
@@ -356,6 +364,31 @@ void loadPuppetConfig(const std::string& config_path) {
     }
 }
 
+void oscResponder(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, float x5, float y5, float x6, float y6, float x7, float y7) {
+    // This function can be used to handle OSC messages
+    // and update the joint states accordingly.
+    // For now, it's just a placeholder.
+    // std::cout << "Received OSC message with coordinates: "
+    //           << "(" << x1 << ", " << y1 << "), "
+    //           << "(" << x2 << ", " << y2 << "), "
+    //           << "(" << x3 << ", " << y3 << "), "
+    //           << "(" << x4 << ", " << y4 << "), "
+    //           << "(" << x5 << ", " << y5 << "), "
+    //           << "(" << x6 << ", " << y6 << "), "
+    //           << "(" << x7 << ", " << y7 << ")" 
+    //           << std::endl;
+
+    std::array<std::array<float, 2>, 7> coordinates = {{
+        {x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}, {x5, y5}, {x6, y6}, {x7, y7}
+    }};
+
+    // for (size_t i = 0; i < coordinates.size(); ++i) {
+    //     update_keypoint(i, coordinates[i][0], coordinates[i][1]);
+    // }
+
+    update_keypoint(3, x4, y4);
+}
+
 
 // Main function
 int main() {
@@ -376,11 +409,21 @@ int main() {
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     // Start the monitoring and processing threads
-    std::thread monitor_thread(monitorLogFile, logfile_path);
+    // std::thread monitor_thread(monitorLogFile, logfile_path);
     std::thread process_thread(processSetpoints);
 
-    monitor_thread.join();
-    process_thread.join();
+    // monitor_thread.join();
+    // process_thread.join();
+
+    JointListener listener;
+
+    listener.callback = oscResponder;
+
+    UdpListeningReceiveSocket s(IpEndpointName(ADDRESS, PORT), &listener);
+
+    std::cout << "listening on " << ADDRESS << ":" << PORT << std::endl;
+
+    s.RunUntilSigInt();
 
     return 0;
 }
