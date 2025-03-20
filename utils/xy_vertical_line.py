@@ -6,10 +6,10 @@ from animate_path import animate_path
 import configparser
 
 # Inputs
-distance = 2.0  # Distance to move up in meters
-speed = 0.3     # Speed in meters per second
+distance = 1.0  # Distance to move up in meters
+speed = 0.5     # Speed in meters per second
 frequency = 40  # Frequency in Hz
-joint_id = 2    # Joint ID to include in the logfile
+joint_id = 6    # Joint ID to include in the logfile
 
 # Calculate the time to traverse the distance
 time_to_traverse = distance / speed

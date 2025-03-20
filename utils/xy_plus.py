@@ -8,9 +8,9 @@ import configparser
 # Inputs
 height = 2.0  # Height of the plus shape in meters
 width = 1.0   # Width of the plus shape in meters
-speed = 1.0  # Speed in meters per second
+speed = 0.5  # Speed in meters per second
 frequency = 40  # Frequency in Hz
-joint_id = 3    # Joint ID to include in the logfile
+joint_id = 0    # Joint ID to include in the logfile
 
 # Calculate the time to traverse the height and width
 time_to_traverse_height = height / speed

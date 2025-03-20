@@ -210,13 +210,13 @@ void processSetpoints() {
 std::pair<float, float> puppet2motor(float X, float Y, const JointState& joint) {
     // Calculate distance from motor to target position, subtract d0, convert to counts
     float a1 = -sqrt(
-        pow(((X - joint.home[0]) - joint.leftMotor.getXpos()), 2.0) + 
-        pow(((Y - joint.home[1]) - joint.leftMotor.getYpos()), 2.0)
+        pow((X - joint.leftMotor.getXpos()), 2.0) + 
+        pow((Y - joint.leftMotor.getYpos()), 2.0)
     ) * cpm + joint.leftMotor.getD0();  // counts
 
     float a2 = -sqrt(
-        pow(((X - joint.home[0]) - joint.rightMotor.getXpos()), 2.0) + 
-        pow(((Y - joint.home[1]) - joint.rightMotor.getYpos()), 2.0)
+        pow((X - joint.rightMotor.getXpos()), 2.0) + 
+        pow((Y - joint.rightMotor.getYpos()), 2.0)
     ) * cpm + joint.rightMotor.getD0();  // counts
 
     return std::make_pair(a1, a2);
@@ -329,17 +329,25 @@ void loadPuppetConfig(const std::string& config_path) {
                     
                     // Calculate D0 for left motor
                     float left_d0 = sqrt(
-                        pow(joint_state.leftMotor.getXpos(), 2.0) + 
-                        pow(joint_state.leftMotor.getYpos(), 2.0)
+                        pow((joint_state.home[0] - joint_state.leftMotor.getXpos()), 2.0) + 
+                        pow((joint_state.home[1] - joint_state.leftMotor.getYpos()), 2.0)
                     ) * cpm;
                     joint_state.leftMotor.setD0(left_d0);
+
+                    if (debug) {
+                    std::cout << "Joint ID: " << joint_id << std::endl;
+                    std::cout << "  Left motor D0: " << left_d0 << std::endl;
+                    }
                     
                     // Calculate D0 for right motor
                     float right_d0 = sqrt(
-                        pow(joint_state.rightMotor.getXpos(), 2.0) + 
-                        pow(joint_state.rightMotor.getYpos(), 2.0)
+                        pow((joint_state.home[0] - joint_state.rightMotor.getXpos()), 2.0) + 
+                        pow((joint_state.home[1] - joint_state.rightMotor.getYpos()), 2.0)
                     ) * cpm;
                     joint_state.rightMotor.setD0(right_d0);
+
+                    if (debug) {
+                    std::cout << "  Left motor D0: " << right_d0 << std::endl;
                     
                     std::cout << "Configured joint " << joint_id << ":" << std::endl;
                     std::cout << "  Left motor: CANid=" << joint_state.leftMotor.getCANid()
@@ -350,6 +358,7 @@ void loadPuppetConfig(const std::string& config_path) {
                               << ", X=" << joint_state.rightMotor.getXpos()
                               << ", Y=" << joint_state.rightMotor.getYpos()
                               << ", D0=" << joint_state.rightMotor.getD0() << std::endl;
+                    }
                     
                 } catch (const std::exception& e) {
                     std::cerr << "Error processing joint section " << section.first << ": " << e.what() << std::endl;
@@ -416,13 +425,9 @@ int main() {
     // process_thread.join();
 
     JointListener listener;
-
     listener.callback = oscResponder;
-
     UdpListeningReceiveSocket s(IpEndpointName(ADDRESS, PORT), &listener);
-
     std::cout << "listening on " << ADDRESS << ":" << PORT << std::endl;
-
     s.RunUntilSigInt();
 
     return 0;

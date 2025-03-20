@@ -228,7 +228,7 @@ void MyActuator::setMotorPos(int position)
     // Calculate the error between the desired and actual position
     float positionError = position - md.Pabs;
     int setpointVelocity = 0;
-    int velLimit = 3200;  // counts/s
+    int velLimit = 6400;  // counts/s
     int updateRate = 525;  // ms
     
     // Set the control mode

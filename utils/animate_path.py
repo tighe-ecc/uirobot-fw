@@ -19,8 +19,13 @@ def animate_path(x, y, frequency):
     ax.grid(True)  # Add gridlines
     ax.set_aspect('equal')  # Make the grid square
 
-    # Add a green box to show the x_range and y_range
+    # Add a red box to show the x_range and y_range
     rect = plt.Rectangle((x_min, y_min), x_range, y_range, 
+                         linewidth=2, edgecolor='red', facecolor='none')
+    ax.add_patch(rect)
+
+    # Add a green box to show the screen
+    rect = plt.Rectangle((-2.96, 0), 5.92, 3.05, 
                          linewidth=2, edgecolor='green', facecolor='none')
     ax.add_patch(rect)
 
