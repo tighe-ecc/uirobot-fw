@@ -283,11 +283,17 @@
             "/D_WINDOWS",          // Windows macro definition
             "/DRYML_SINGLE_HEADER",    // rapidyaml macro
             "/DC4CORE_SINGLE_HEADER",  // c4core macro
+
+            // oscpack source files
+            "${workspaceFolder}/cloudgate-src/oscpack/osc/OscTypes.cpp",
+            "${workspaceFolder}/cloudgate-src/oscpack/osc/OscReceivedElements.cpp",
+            "${workspaceFolder}/cloudgate-src/oscpack/osc/OscPrintReceivedElements.cpp",
+            "${workspaceFolder}/cloudgate-src/oscpack/osc/ip/IpEndpointName.cpp",
+            "${workspaceFolder}/cloudgate-src/oscpack/osc/ip/win32/NetworkingUtils.cpp",
+            "${workspaceFolder}/cloudgate-src/oscpack/osc/ip/win32/UdpSocket.cpp",
             "${workspaceFolder}/cloudgate-src/puppet_demo.cpp",
             "${workspaceFolder}/cloudgate-src/motor_actuator.cpp",
             "/Fe:${workspaceFolder}/cloudgate/puppet_demo.exe",  // Output executable
-            "/I", "C:/boost/include/boost-1_87",     // Boost include
-            "/I", "C:/Libraries/inipp/inipp",        // inipp include
             "/I", "${workspaceFolder}/uirSDKfiles",  // UirSDK include
             "/link",
             "/LIBPATH:${workspaceFolder}/UirSdkLib",
