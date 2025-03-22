@@ -12,11 +12,16 @@
 #include <map>
 #include <array>
 #include <atomic>
+#include <algorithm>
+#include <cmath>
+#include <utility>
 
 #define ADDRESS "0.0.0.0"
 #define PORT 7600
 
 const bool debug = false;  // Enable debug mode
+bool should_pause = false;  // Enable pause mode
+bool should_exit = false;  // Track exit flag
 
 // Define a structure to hold a joint position
 struct Point {
@@ -68,6 +73,7 @@ std::atomic<bool> done(false);
 std::pair<float, float> puppet2motor(float X, float Y, const JointState& joint);
 void update_keypoint(int id, float x, float y);
 void loadPuppetConfig(const std::string& config_path);
+void shutdownSystem();
 
 
 // Function to monitor the log file and push the setpoints to the queue
@@ -152,6 +158,25 @@ void monitorLogFile(const std::string& logfile_path) {
 // Function to push setpoints to the actuators
 void processSetpoints() {
     while (!done) {
+        // Check for 's' key press to pause
+        if (GetAsyncKeyState('S') & 0x8000) {
+            should_pause = true;
+            std::cout << "Pause toggled: ON" << std::endl;
+        }
+
+        // Check for 'p' key press to unpause
+        if (GetAsyncKeyState('P') & 0x8000) {
+            should_pause = false;
+            std::cout << "Pause toggled: OFF" << std::endl;
+        }
+
+        // Check for 'e' key press to exit
+        if (GetAsyncKeyState('E') & 0x8000) {
+            should_exit = true;
+            std::cout << "Exit flag set: Exiting processSetpoints loop." << std::endl;
+            break;
+        }
+
         // Process each keypoint state
         for (auto& [id, state] : joint_states) {
             if (debug) { std::cout << "Processing joint id: " << id << std::endl; }
@@ -186,7 +211,12 @@ void processSetpoints() {
         
         if (debug) { std::cout << std::endl; }
     }
+
+    shutdownSystem();
     
+}
+
+void shutdownSystem() {
     // Return puppet to zero position
     std::cout << "Returning to zero position." << std::endl;
     for (auto& [id, state] : joint_states) {
@@ -194,17 +224,19 @@ void processSetpoints() {
         state.rightMotor.returnToZero();
     }
     MyActuator::startMotion();
-    
+
     std::cout << "Waiting for return to zero." << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::this_thread::sleep_for(std::chrono::seconds(10));
 
     MyActuator::closeAllLogFiles();
-    
+
     // Disable the motors and terminate the program
     std::cout << "Disabling motors." << std::endl;
     MyActuator::disableMotors();
-}
 
+    std::cout << "Terminating program." << std::endl;
+    exit(0);
+}
 
 // Transform the XY coordinates in meters to actuator positions in counts
 std::pair<float, float> puppet2motor(float X, float Y, const JointState& joint) {
@@ -387,17 +419,38 @@ void oscResponder(float x1, float y1, float x2, float y2, float x3, float y3, fl
     //           << "(" << x7 << ", " << y7 << ")" 
     //           << std::endl;
 
+
+    // // Make sure that joints in the same plane do not collide
+    // if (x1 > x7) std::swap(x1, x7);
+    // if (x2 > x6) std::swap(x2, x6);
+    // if (x3 > x5) std::swap(x3, x5);
+
+
     std::array<std::array<float, 2>, 7> coordinates = {{
         {x1, y1}, {x2, y2}, {x3, y3}, {x4, y4}, {x5, y5}, {x6, y6}, {x7, y7}
     }};
 
-    // for (size_t i = 0; i < coordinates.size(); ++i) {
-    //     update_keypoint(i, coordinates[i][0], coordinates[i][1]);
-    // }
+    for (size_t i = 0; i < coordinates.size(); ++i) {
+        auto& joint_state = joint_states[i];
+        float x = coordinates[i][0];
+        float y = coordinates[i][1];
 
-    update_keypoint(0, x1, y1);
-    update_keypoint(3, x4, y4);
-    update_keypoint(6, x7, y7);
+        // Limit x to between leftMotor.xpos and rightMotor.xpos
+        x = std::clamp(static_cast<float>(x), static_cast<float>(joint_state.leftMotor.getXpos()), static_cast<float>(joint_state.rightMotor.getXpos()));
+
+        // Limit y to between 0 and min(leftMotor.ypos, rightMotor.ypos)
+        float y_max = 3.05;  // Assume we do not want points to float higher than screens
+        y = std::clamp(y, 0.0f, y_max);
+
+        // List of actuated joints
+        std::vector<int> actuated_joints = {0, 1, 2, 3, 4, 5, 6};
+
+        // Update the keypoint only if i is in the list of actuated joints and not paused
+        if (!should_pause && std::find(actuated_joints.begin(), actuated_joints.end(), i) != actuated_joints.end()) {
+            update_keypoint(i, x, y);
+            // std::cout << "Updated joint " << i << " with coordinates: (" << x << ", " << y << ")" << std::endl;
+        }
+    }
 }
 
 

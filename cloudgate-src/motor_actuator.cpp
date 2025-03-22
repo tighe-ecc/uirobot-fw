@@ -228,7 +228,7 @@ void MyActuator::setMotorPos(int position)
     // Calculate the error between the desired and actual position
     float positionError = position - md.Pabs;
     int setpointVelocity = 0;
-    int velLimit = 6400;  // counts/s
+    int velLimit = 3200;  // counts/s
     int updateRate = 525;  // ms
     
     // Set the control mode
@@ -247,7 +247,7 @@ void MyActuator::setMotorPos(int position)
         // static float integralError = 0;
         md.integralError += positionError * elapsedTime / 1000.0;
         if (Ki * md.integralError > setpointVelocity) {
-            std::cout << "CANid:" << CANid << "Integral error is too high, limiting to 160000\n";
+            // std::cout << "CANid:" << CANid << "Integral error is too high, limiting to 160000\n";
             md.integralError = setpointVelocity / Ki;
         }
 
@@ -259,7 +259,7 @@ void MyActuator::setMotorPos(int position)
         // Calculate the control output
         setpointVelocity = static_cast<int>(Kp * positionError + Ki * md.integralError + Kd * derivativeError);
         if (std::abs(setpointVelocity) > velLimit) {
-            std::cout << "CANid:" << CANid << "Setpoint velocity is too high, limiting to 160000\n";
+            // std::cout << "CANid:" << CANid << "Setpoint velocity is too high, limiting to 160000\n";
             setpointVelocity = (setpointVelocity > 0) ? velLimit : -velLimit;
         }
 
@@ -267,7 +267,7 @@ void MyActuator::setMotorPos(int position)
         static const int maxAcceleration = 131; // Maximum change in velocity per millisecond, ~9.8m/s^2
         int velocityChange = setpointVelocity - md.lastVelocity;
         if (std::abs(velocityChange) > maxAcceleration * updateRate) {
-            std::cout << "CANid:" << CANid << "Acceleration limit exceeded, limiting velocity change\n";
+            // std::cout << "CANid:" << CANid << "Acceleration limit exceeded, limiting velocity change\n";
             setpointVelocity = md.lastVelocity + ((velocityChange > 0) ? maxAcceleration * updateRate : -maxAcceleration * updateRate);
         }
         md.lastVelocity = setpointVelocity;
